@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fallback so content is visible even if Tailwind fails */
+#root {
+  min-height: 100vh;
+}
