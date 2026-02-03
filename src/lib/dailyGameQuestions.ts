@@ -25,6 +25,7 @@ export type CareerPathStint = { team: string; years: string };
 
 export type CareerPathQuestion = {
   type: 'careerPath';
+  position: string;
   college: string;
   collegeYears: string;
   nflStints: CareerPathStint[];
