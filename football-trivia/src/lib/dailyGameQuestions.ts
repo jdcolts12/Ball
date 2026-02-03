@@ -21,7 +21,10 @@ export type DraftQuestion = {
   options: [string, string, string, string];
 };
 
-export type CareerPathStint = { team: string; years: string };
+export type CareerPathQuestion = {
+  type: 'careerPath';
+  position: string;
+  college: string;
 
 export type CareerPathQuestion = {
   type: 'careerPath';
