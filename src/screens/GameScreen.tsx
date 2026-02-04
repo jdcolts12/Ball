@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { GameQuestion } from '../lib/dailyGameQuestions';
 import { getDailyGameQuestions } from '../lib/dailyGameQuestions';
 import { getPickLabel } from '../lib/dailyDraftQuestion';
@@ -30,6 +30,9 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [careerPathGuess, setCareerPathGuess] = useState('');
   /** After answering: % of players who got today's version of this question correct (0–100). */
   const [questionCorrectPct, setQuestionCorrectPct] = useState<number | null>(null);
+  /** Timer countdown in seconds (30 seconds per question) */
+  const [timeRemaining, setTimeRemaining] = useState(30);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const current: GameQuestion = questions[index];
   const correctAnswer =
@@ -41,8 +44,15 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const options = current.options;
 
   const handleAnswer = useCallback(
-    (choice: string) => {
+    (choice: string, isTimeout: boolean = false) => {
       if (answered) return;
+      
+      // Clear the timer interval
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+      
       setAnswered(true);
       const correct =
         current.type === 'careerPath'
@@ -94,6 +104,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           setAnswered(false);
           setCareerPathGuess('');
           setQuestionCorrectPct(null);
+          setTimeRemaining(30); // Reset timer for next question
         }
       }, 3000);
     },
@@ -106,14 +117,83 @@ export function GameScreen({ onEnd }: GameScreenProps) {
     handleAnswer(guess);
   }, [careerPathGuess, handleAnswer]);
 
+  // Timer effect: countdown and auto-answer when expired
+  useEffect(() => {
+    // Reset timer when question changes
+    setTimeRemaining(30);
+    
+    // Clear any existing interval
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    
+    // Don't start timer if already answered
+    if (answered) return;
+    
+    // Capture current values for the timeout handler
+    const currentQuestion = current;
+    const currentOptions = options;
+    const currentCorrectAnswer = correctAnswer;
+    
+    // Start countdown timer
+    timerIntervalRef.current = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          // Time expired - mark as wrong
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+            timerIntervalRef.current = null;
+          }
+          // For timeout, we need to provide a wrong answer
+          // For draft/college: pick first wrong option
+          // For careerPath: use empty string (will be wrong)
+          const wrongAnswer = currentQuestion.type === 'careerPath' ? '' : currentOptions.find(opt => opt !== currentCorrectAnswer) || currentOptions[0];
+          handleAnswer(wrongAnswer, true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    
+    // Cleanup on unmount or when question/answered changes
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+    };
+  }, [index, answered, current, options, correctAnswer, handleAnswer]); // Include all dependencies
+
+  // Stop timer when answered
+  useEffect(() => {
+    if (answered && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+  }, [answered]);
+
   const careerPathCorrect = current.type === 'careerPath' && answered && isCloseEnough(careerPathGuess, current.correctAnswer);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
-        <p className="text-slate-400 text-sm">
-          Question {index + 1} of {questions.length}
-        </p>
+        <div className="flex justify-between items-center">
+          <p className="text-slate-400 text-sm">
+            Question {index + 1} of {questions.length}
+          </p>
+          <div className="flex items-center gap-2">
+            <div className={`text-sm font-bold ${timeRemaining <= 5 ? 'text-red-400' : timeRemaining <= 10 ? 'text-amber-400' : 'text-slate-300'}`}>
+              {timeRemaining}s
+            </div>
+            <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full transition-all duration-1000 ${timeRemaining <= 5 ? 'bg-red-500' : timeRemaining <= 10 ? 'bg-amber-500' : 'bg-amber-400'}`}
+                style={{ width: `${(timeRemaining / 30) * 100}%` }}
+              />
+            </div>
+          </div>
+        </div>
 
         {current.type === 'draft' ? (
           <>

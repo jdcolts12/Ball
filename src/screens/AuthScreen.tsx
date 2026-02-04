@@ -30,7 +30,13 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
         }
         const { error: err, session } = await signUp(email.trim(), password, username.trim());
         if (err) {
-          setError(err.message);
+          // Show user-friendly error messages
+          const errorMsg = err.message.toLowerCase();
+          if (errorMsg.includes('username') && (errorMsg.includes('taken') || errorMsg.includes('already'))) {
+            setError('This username is already taken. Please choose a different username.');
+          } else {
+            setError(err.message);
+          }
           return;
         }
         if (session) {
