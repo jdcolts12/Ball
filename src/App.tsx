@@ -16,7 +16,7 @@ const loadingStyle = { minHeight: '100vh', background: 'linear-gradient(to botto
 
 function App() {
   const { user, initializing, signOut } = useAuth();
-  const { canPlay, recordPlay } = useDailyPlayLimit();
+  const { canPlay, recordPlay, refreshCanPlay, checking } = useDailyPlayLimit();
   const [screen, setScreen] = useState<Screen>('home');
   const [results, setResults] = useState<{ score: number; correct: number; total: number; breakdown: GameResultBreakdown } | null>(null);
 
@@ -40,11 +40,15 @@ function App() {
     );
   }
 
-  // Show stats screen if they can't play (and not on leaderboard)
-  if (!canPlay) {
+  // Show "checking" or "already played" screen when they can't play
+  if (checking || !canPlay) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
-        <DailyLimitScreen onLeaderboard={() => setScreen('leaderboard')} />
+        {checking ? (
+          <div style={loadingStyle}>Checking…</div>
+        ) : (
+          <DailyLimitScreen onLeaderboard={() => setScreen('leaderboard')} />
+        )}
       </div>
     );
   }
@@ -58,7 +62,7 @@ function App() {
           total={results.total}
           breakdown={results.breakdown}
           onLeaderboard={() => setScreen('leaderboard')}
-          onHome={() => { setScreen('home'); setResults(null); }}
+          onHome={() => { refreshCanPlay(); setScreen('home'); setResults(null); }}
         />
       </div>
     );
@@ -80,7 +84,6 @@ function App() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
       <GameScreen
         onEnd={(score, correct, total, breakdown) => {
-          recordPlay();
           setResults({ score, correct, total, breakdown });
           setScreen('results');
           if (user) {
@@ -91,7 +94,9 @@ function App() {
               correctDraft: breakdown.draftCorrect,
               correctCollege: breakdown.collegeCorrect,
               correctCareerPath: breakdown.careerPathCorrect,
-            }).catch(() => {});
+            })
+              .then(() => recordPlay())
+              .catch(() => {});
           }
         }}
       />

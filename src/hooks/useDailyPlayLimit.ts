@@ -1,45 +1,46 @@
 import { useState, useCallback, useEffect } from 'react';
-import {
-  getLastPlayed,
-  recordPlay as recordPlayStorage,
-  getLocalDateString,
-} from '../lib/dailyPlayLimit';
+import { getLocalDateString } from '../lib/dailyPlayLimit';
+import { recordPlay as recordPlayStorage } from '../lib/dailyPlayLimit';
+import { hasPlayedTodayFromServer } from '../services/games';
 
 /** Set to true to bypass daily limit (for testing). */
-const DAILY_LIMIT_DISABLED = true;
+const DAILY_LIMIT_DISABLED = false;
 
 /**
- * Block play if lastPlayed === today (local date). Else allow.
- * Uses localStorage.
+ * Block play if user already played today. Uses server (Supabase games table) as source of truth;
+ * also updates localStorage so UI stays in sync after completing a game.
  */
 export function useDailyPlayLimit() {
-  const [lastPlayed, setLastPlayed] = useState<string | null>(getLastPlayed);
+  const [playedToday, setPlayedToday] = useState<boolean | null>(null);
 
-  useEffect(() => {
-    setLastPlayed(getLastPlayed());
+  const refreshCanPlay = useCallback(() => {
+    hasPlayedTodayFromServer().then(({ played, error }) => {
+      if (!error) setPlayedToday(played);
+    });
   }, []);
 
-  const today = getLocalDateString();
-  const playedToday = lastPlayed === today;
+  useEffect(() => {
+    refreshCanPlay();
+  }, [refreshCanPlay]);
 
-  /** Block if already played today; else allow. (Bypassed when DAILY_LIMIT_DISABLED.) */
-  const canPlay = DAILY_LIMIT_DISABLED || !playedToday;
+  const today = getLocalDateString();
+
+  /** Block when already played today; block when still loading (null) so we don't allow play before server check. */
+  const canPlay = DAILY_LIMIT_DISABLED || playedToday === false;
 
   const recordPlay = useCallback(() => {
     recordPlayStorage();
-    setLastPlayed(getLocalDateString());
+    setPlayedToday(true);
   }, []);
 
   return {
-    /** Last played date (YYYY-MM-DD) or null. */
-    lastPlayed,
-    /** Today's date (YYYY-MM-DD). */
+    lastPlayed: playedToday ? today : null,
     today,
-    /** True if user already played today → block. */
-    playedToday,
-    /** True if user can play (have not played today). */
+    playedToday: playedToday === true,
+    /** True if we're still fetching from server (don't allow play until we know). */
+    checking: playedToday === null,
     canPlay,
-    /** Call when a game is completed. */
     recordPlay,
+    refreshCanPlay,
   };
 }

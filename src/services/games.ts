@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import type { GameInsert, Stats } from '../types/database';
+import type { GameInsert, Stats, Game } from '../types/database';
 
 /**
  * Record a completed game. The Supabase trigger updates stats.
@@ -59,6 +59,67 @@ export async function getCurrentStats(): Promise<{ stats: Stats | null; error: E
     return { stats: null, error: new Error(error.message) };
   }
   return { stats: data as Stats | null, error: null };
+}
+
+/**
+ * Fetch today's game for the current user (most recent game created today, user's local date).
+ * Uses local midnight → local end-of-day converted to ISO for UTC comparison.
+ */
+export async function getTodaysGame(): Promise<{ game: Game | null; error: Error | null }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { game: null, error: new Error('Not authenticated') };
+  }
+
+  const now = new Date();
+  const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const endLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  const startISO = startLocal.toISOString();
+  const endISO = endLocal.toISOString();
+
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    return { game: null, error: new Error(error.message) };
+  }
+  return { game: data as Game | null, error: null };
+}
+
+/**
+ * Returns true if the current user has already played today (server source of truth).
+ */
+export async function hasPlayedTodayFromServer(): Promise<{ played: boolean; error: Error | null }> {
+  const { game, error } = await getTodaysGame();
+  return { played: !!game, error };
+}
+
+/**
+ * Fetch user's game history (for calculating streaks).
+ */
+export async function getUserGameHistory(): Promise<{ games: Game[]; error: Error | null }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    return { games: [], error: new Error('Not authenticated') };
+  }
+
+  const { data, error } = await supabase
+    .from('games')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    return { games: [], error: new Error(error.message) };
+  }
+  return { games: (data ?? []) as Game[], error: null };
 }
 
 export interface CorrectPctTodayResult {
