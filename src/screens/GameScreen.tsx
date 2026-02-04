@@ -182,11 +182,11 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           <p className="text-slate-400 text-sm">
             Question {index + 1} of {questions.length}
           </p>
-          <div className="flex items-center gap-2">
-            <div className={`text-sm font-bold ${timeRemaining <= 5 ? 'text-red-400' : timeRemaining <= 10 ? 'text-amber-400' : 'text-slate-300'}`}>
-              {timeRemaining}s
+          <div className="flex items-center gap-3">
+            <div className={`text-lg font-bold px-3 py-1 rounded ${timeRemaining <= 5 ? 'text-red-400 bg-red-900/30' : timeRemaining <= 10 ? 'text-amber-400 bg-amber-900/30' : 'text-slate-300 bg-slate-800/50'}`}>
+              ⏱️ {timeRemaining}s
             </div>
-            <div className="w-16 h-2 bg-slate-700 rounded-full overflow-hidden">
+            <div className="w-20 h-2 bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full transition-all duration-1000 ${timeRemaining <= 5 ? 'bg-red-500' : timeRemaining <= 10 ? 'bg-amber-500' : 'bg-amber-400'}`}
                 style={{ width: `${(timeRemaining / 30) * 100}%` }}
