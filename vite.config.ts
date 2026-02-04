@@ -7,10 +7,14 @@ const dir = path.dirname(fileURLToPath(import.meta.url))
 export default defineConfig({
   root: dir,
   envDir: dir,
+  define: {
+    __BUILD_ID__: JSON.stringify(new Date().toISOString().slice(0, 19).replace('T', ' ')),
+  },
   plugins: [react()],
   server: {
-    port: 5173,
-    host: '127.0.0.1',
+    port: 3000,
+    host: '0.0.0.0',
     open: true,
+    strictPort: false,
   },
 })

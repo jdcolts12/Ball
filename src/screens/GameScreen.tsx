@@ -178,7 +178,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <p className="text-slate-400 text-sm">
             Question {index + 1} of {questions.length}
           </p>
@@ -193,6 +193,9 @@ export function GameScreen({ onEnd }: GameScreenProps) {
               />
             </div>
           </div>
+          <span className="text-slate-600 text-xs ml-auto" title="Build time - new build = new version">
+            v {typeof __BUILD_ID__ !== 'undefined' ? __BUILD_ID__ : 'dev'}
+          </span>
         </div>
 
         {current.type === 'draft' ? (
