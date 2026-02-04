@@ -30,18 +30,21 @@ function App() {
       </div>
     );
   }
-  if (!canPlay) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
-        <DailyLimitScreen />
-      </div>
-    );
-  }
 
+  // Show leaderboard regardless of canPlay status
   if (screen === 'leaderboard') {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <LeaderboardScreen onBack={() => setScreen('home')} />
+      </div>
+    );
+  }
+
+  // Show stats screen if they can't play (and not on leaderboard)
+  if (!canPlay) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
+        <DailyLimitScreen onLeaderboard={() => setScreen('leaderboard')} />
       </div>
     );
   }
@@ -97,3 +100,4 @@ function App() {
 }
 
 export default App;
+// Force redeploy Wed Feb  4 01:56:14 PST 2026
