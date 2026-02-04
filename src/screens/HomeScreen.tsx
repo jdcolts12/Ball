@@ -31,9 +31,10 @@ export function HomeScreen({ onStart, onLeaderboard, onSignOut }: HomeScreenProp
           YunoBall
         </h1>
         <div className="h-1.5 w-32 bg-white mx-auto mb-6 rounded-full"></div>
-        <p className="text-white text-xl font-semibold mb-8 leading-relaxed">
+        <p className="text-white text-xl font-semibold mb-2 leading-relaxed">
           Daily NFL trivia. 3 questions, one round per day. Test Your Ball Knowledge
         </p>
+        <p className="text-white/50 text-sm mb-8">Updated Jan 2026 — timer, leaderboard, one game per day</p>
         <div className="space-y-4">
           <button
             type="button"
