@@ -2,9 +2,11 @@ interface HomeScreenProps {
   onStart: () => void;
   onLeaderboard: () => void;
   onSignOut?: () => void;
+  /** True while checking server before starting (disable Start button). */
+  startingGame?: boolean;
 }
 
-export function HomeScreen({ onStart, onLeaderboard, onSignOut }: HomeScreenProps) {
+export function HomeScreen({ onStart, onLeaderboard, onSignOut, startingGame }: HomeScreenProps) {
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
       {/* Football field pattern background */}
@@ -39,9 +41,10 @@ export function HomeScreen({ onStart, onLeaderboard, onSignOut }: HomeScreenProp
           <button
             type="button"
             onClick={onStart}
-            className="w-full py-4 bg-white text-green-900 hover:bg-yellow-400 font-black text-xl rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-2xl uppercase tracking-wide"
+            disabled={startingGame}
+            className="w-full py-4 bg-white text-green-900 hover:bg-yellow-400 font-black text-xl rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-2xl uppercase tracking-wide disabled:opacity-60 disabled:pointer-events-none"
           >
-            Start game
+            {startingGame ? 'Checking…' : 'Start game'}
           </button>
           <button
             type="button"

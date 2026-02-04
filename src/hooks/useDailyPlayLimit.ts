@@ -14,7 +14,7 @@ export function useDailyPlayLimit() {
   const [playedToday, setPlayedToday] = useState<boolean | null>(null);
 
   const refreshCanPlay = useCallback(() => {
-    hasPlayedTodayFromServer().then(({ played, error }) => {
+    return hasPlayedTodayFromServer().then(({ played, error }) => {
       if (!error) setPlayedToday(played);
     });
   }, []);

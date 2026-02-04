@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { useDailyPlayLimit } from './hooks/useDailyPlayLimit';
-import { recordCompletedGame } from './services/games';
+import { recordCompletedGame, hasPlayedTodayFromServer } from './services/games';
 import { AuthScreen } from './screens/AuthScreen';
 import { DailyLimitScreen } from './screens/DailyLimitScreen';
 import { HomeScreen } from './screens/HomeScreen';
@@ -19,6 +19,7 @@ function App() {
   const { canPlay, recordPlay, refreshCanPlay, checking } = useDailyPlayLimit();
   const [screen, setScreen] = useState<Screen>('home');
   const [results, setResults] = useState<{ score: number; correct: number; total: number; breakdown: GameResultBreakdown } | null>(null);
+  const [startingGame, setStartingGame] = useState(false);
 
   if (initializing) {
     return <div style={loadingStyle}>Loading…</div>;
@@ -62,19 +63,33 @@ function App() {
           total={results.total}
           breakdown={results.breakdown}
           onLeaderboard={() => setScreen('leaderboard')}
-          onHome={() => { refreshCanPlay(); setScreen('home'); setResults(null); }}
+          onHome={() => { refreshCanPlay().then(() => { setResults(null); setScreen('home'); }); }}
         />
       </div>
     );
   }
 
   if (screen === 'home') {
+    const handleStart = async () => {
+      setStartingGame(true);
+      try {
+        const { played } = await hasPlayedTodayFromServer();
+        if (played) {
+          refreshCanPlay();
+          return;
+        }
+        setScreen('game');
+      } finally {
+        setStartingGame(false);
+      }
+    };
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <HomeScreen
-          onStart={() => setScreen('game')}
+          onStart={handleStart}
           onLeaderboard={() => setScreen('leaderboard')}
           onSignOut={signOut}
+          startingGame={startingGame}
         />
       </div>
     );
