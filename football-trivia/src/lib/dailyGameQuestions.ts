@@ -21,10 +21,7 @@ export type DraftQuestion = {
   options: [string, string, string, string];
 };
 
-export type CareerPathQuestion = {
-  type: 'careerPath';
-  position: string;
-  college: string;
+export type CareerPathStint = { team: string; years: string };
 
 export type CareerPathQuestion = {
   type: 'careerPath';
@@ -108,3 +105,4 @@ export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
 
   return [draftQuestion, collegeQuestion, careerPathQuestion];
 }
+
