@@ -6,38 +6,50 @@ interface HomeScreenProps {
 
 export function HomeScreen({ onStart, onLeaderboard, onSignOut }: HomeScreenProps) {
   return (
-    <div
-      className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6"
-      style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', background: '#0f172a', color: '#e2e8f0' }}
-    >
+    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
+      {/* Football field pattern background */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="h-full w-full" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.1) 49px, rgba(255,255,255,0.1) 50px)',
+        }}></div>
+      </div>
+
       {onSignOut && (
         <button
           type="button"
           onClick={onSignOut}
-          style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.5rem 1rem', background: 'transparent', border: '1px solid #475569', color: '#94a3b8', borderRadius: '6px', cursor: 'pointer', fontSize: '0.875rem' }}
+          className="absolute top-4 right-4 px-4 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg cursor-pointer text-sm font-semibold transition-all backdrop-blur-sm z-20"
         >
           Sign out
         </button>
       )}
-      <div style={{ textAlign: 'center' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 'bold', color: '#fff', marginBottom: '1rem' }}>YunoBall</h1>
-        <p style={{ color: '#94a3b8', marginBottom: '2rem' }}>
-          Daily NFL trivia. Draft top 10, college trivia, career path — 3 questions, one round per day.
+      
+      <div className="text-center relative z-10 max-w-md">
+        <h1 className="text-6xl font-black text-white mb-3 tracking-tight" style={{ 
+          textShadow: '3px 3px 6px rgba(0,0,0,0.5), 0 0 30px rgba(255,255,255,0.15)',
+        }}>
+          YunoBall
+        </h1>
+        <div className="h-1.5 w-32 bg-white mx-auto mb-6 rounded-full"></div>
+        <p className="text-white text-xl font-semibold mb-8 leading-relaxed">
+          Daily NFL trivia. 3 questions, one round per day. Test Your Ball Knowledge
         </p>
-        <button
-          type="button"
-          onClick={onStart}
-          style={{ padding: '1rem 2rem', background: '#f59e0b', color: '#1e293b', fontWeight: 'bold', fontSize: '1.125rem', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
-        >
-          Start game
-        </button>
-        <button
-          type="button"
-          onClick={onLeaderboard}
-          style={{ display: 'block', width: '100%', marginTop: '1rem', padding: '0.5rem', background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.875rem' }}
-        >
-          View leaderboard
-        </button>
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={onStart}
+            className="w-full py-4 bg-white text-green-900 hover:bg-yellow-400 font-black text-xl rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-2xl uppercase tracking-wide"
+          >
+            Start game
+          </button>
+          <button
+            type="button"
+            onClick={onLeaderboard}
+            className="w-full py-3 text-white/90 hover:text-white text-base font-bold transition-colors underline decoration-white/40 hover:decoration-white"
+          >
+            View leaderboard
+          </button>
+        </div>
       </div>
     </div>
   );

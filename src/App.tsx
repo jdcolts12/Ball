@@ -12,7 +12,7 @@ import type { GameResultBreakdown } from './screens/GameScreen';
 
 type Screen = 'home' | 'game' | 'results' | 'leaderboard';
 
-const loadingStyle = { minHeight: '100vh', background: '#1e293b', color: '#fbbf24', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, sans-serif' };
+const loadingStyle = { minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, sans-serif', fontWeight: 'bold' };
 
 function App() {
   const { user, initializing, signOut } = useAuth();
@@ -25,14 +25,14 @@ function App() {
   }
   if (!user) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <AuthScreen onSuccess={() => {}} />
       </div>
     );
   }
   if (!canPlay) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <DailyLimitScreen />
       </div>
     );
@@ -40,7 +40,7 @@ function App() {
 
   if (screen === 'leaderboard') {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <LeaderboardScreen onBack={() => setScreen('home')} />
       </div>
     );
@@ -48,7 +48,7 @@ function App() {
 
   if (screen === 'results' && results) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <ResultsScreen
           score={results.score}
           correct={results.correct}
@@ -63,7 +63,7 @@ function App() {
 
   if (screen === 'home') {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
         <HomeScreen
           onStart={() => setScreen('game')}
           onLeaderboard={() => setScreen('leaderboard')}
@@ -74,7 +74,7 @@ function App() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
       <GameScreen
         onEnd={(score, correct, total, breakdown) => {
           recordPlay();
