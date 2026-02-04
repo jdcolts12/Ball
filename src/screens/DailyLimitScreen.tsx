@@ -1,38 +1,200 @@
+import { useState, useEffect } from 'react';
 import { useDailyPlayLimit } from '../hooks/useDailyPlayLimit';
+import { getTodaysGame } from '../services/games';
+import type { Game } from '../types/database';
+import { getDailyGameQuestions } from '../lib/dailyGameQuestions';
+import { getPickLabel } from '../lib/dailyDraftQuestion';
+import type { GameQuestion } from '../lib/dailyGameQuestions';
 
-export function DailyLimitScreen() {
+interface DailyLimitScreenProps {
+  onLeaderboard: () => void;
+}
+
+export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
   const { lastPlayed } = useDailyPlayLimit();
+  const [todaysGame, setTodaysGame] = useState<Game | null>(null);
+  const [questions, setQuestions] = useState<GameQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [timeUntilNext, setTimeUntilNext] = useState<string>('');
+
+  // Format YYYY-MM-DD to MM/DD/YYYY
+  const formatDate = (dateStr: string): string => {
+    const [year, month, day] = dateStr.split('-');
+    return `${month}/${day}/${year}`;
+  };
+
+  // Calculate time until next game (midnight)
+  useEffect(() => {
+    function updateCountdown() {
+      const now = new Date();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      tomorrow.setHours(0, 0, 0, 0);
+      
+      const diff = tomorrow.getTime() - now.getTime();
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeUntilNext(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+    }
+    
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    async function fetchTodaysGame() {
+      setLoading(true);
+      const { game, error } = await getTodaysGame();
+      if (!error && game) {
+        setTodaysGame(game);
+      }
+      // Get today's questions to display
+      const todaysQuestions = getDailyGameQuestions();
+      setQuestions(todaysQuestions);
+      setLoading(false);
+    }
+    fetchTodaysGame();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6">
-      <div className="max-w-md w-full text-center space-y-6">
-        <div className="rounded-full bg-amber-500/20 p-4 inline-flex">
-          <svg
-            className="w-12 h-12 text-amber-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-        </div>
-        <h1 className="text-2xl font-bold text-white">
-          You've already played today
+    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6 relative overflow-y-auto">
+      {/* Football field pattern background */}
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div className="h-full w-full" style={{
+          backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.1) 49px, rgba(255,255,255,0.1) 50px)',
+        }}></div>
+      </div>
+
+      {/* Leaderboard link at top - always visible */}
+      <div className="relative z-20 flex justify-end mb-2">
+        <button
+          type="button"
+          onClick={onLeaderboard}
+          className="px-4 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-sm font-semibold transition-all backdrop-blur-sm"
+        >
+          View Leaderboard
+        </button>
+      </div>
+      
+      <div className="max-w-md w-full text-center space-y-6 relative z-10 flex-1 flex flex-col items-center justify-center">
+        <h1 className="text-4xl font-black text-white" style={{ 
+          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+        }}>
+          Today's Stats
         </h1>
-        <p className="text-slate-400">
-          Come back tomorrow for another round of YunoBall.
+        <div className="h-1 w-24 bg-white mx-auto rounded-full"></div>
+        
+        {loading ? (
+          <p className="text-white/70">Loading your stats...</p>
+        ) : todaysGame ? (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 border-2 border-white/20 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <div className="text-3xl font-black text-white">{todaysGame.score}</div>
+                <div className="text-sm text-white/80 font-semibold uppercase tracking-wide">Score</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-black text-white">
+                  {todaysGame.correct_answers}/{todaysGame.questions_answered}
+                </div>
+                <div className="text-sm text-white/80 font-semibold uppercase tracking-wide">Correct</div>
+              </div>
+            </div>
+
+            <div className="pt-4 border-t border-white/20">
+              <div className="text-sm font-semibold text-white/90 mb-3">Question Breakdown:</div>
+              <div className="space-y-4 text-left">
+                {questions[0]?.type === 'draft' && (
+                  <div>
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex-1">
+                        <div className="text-white font-semibold text-sm">
+                          {questions[0].year} NFL Draft
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          {getPickLabel(questions[0].missingSlotIndex)} missing: {questions[0].correctAnswer}
+                        </div>
+                      </div>
+                      <span className={`font-bold ml-2 ${todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}`}>
+                        {todaysGame.correct_draft ? '✓' : '✗'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {questions[1]?.type === 'college' && (
+                  <div>
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex-1">
+                        <div className="text-white font-semibold text-sm">
+                          Which college did {questions[1].name} attend?
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Correct: {questions[1].college}
+                        </div>
+                      </div>
+                      <span className={`font-bold ml-2 ${todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}`}>
+                        {todaysGame.correct_college ? '✓' : '✗'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                {questions[2]?.type === 'careerPath' && (
+                  <div>
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex-1">
+                        <div className="text-white font-semibold text-sm">
+                          Guess the {questions[2].position} by career path
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          {questions[2].college} → {questions[2].nflStints.map(s => s.team).join(', ')}
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Correct: {questions[2].correctAnswer}
+                        </div>
+                      </div>
+                      <span className={`font-bold ml-2 ${todaysGame.correct_career_path ? 'text-green-300' : 'text-red-300'}`}>
+                        {todaysGame.correct_career_path ? '✓' : '✗'}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <p className="text-white/70">No game data available</p>
+        )}
+        
+        <p className="text-white text-xl font-semibold">
+          Come back tomorrow for the next round
         </p>
+        
         {lastPlayed && (
-          <p className="text-sm text-slate-500">
-            Last played: {lastPlayed}
+          <p className="text-sm text-white/70 font-medium">
+            Last played: {formatDate(lastPlayed)}
           </p>
         )}
+        
+        {timeUntilNext && (
+          <p className="text-sm text-white/70 font-medium">
+            Next game in: <span className="font-mono font-bold">{timeUntilNext}</span>
+          </p>
+        )}
+        
+        <div className="pt-4">
+          <button
+            type="button"
+            onClick={onLeaderboard}
+            className="w-full py-3 bg-white text-green-900 hover:bg-yellow-400 font-black text-lg rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg uppercase tracking-wide"
+          >
+            View Leaderboard
+          </button>
+        </div>
       </div>
     </div>
   );
