@@ -15,34 +15,30 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
   const [todaysGame, setTodaysGame] = useState<Game | null>(null);
   const [questions, setQuestions] = useState<GameQuestion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [timeUntilNext, setTimeUntilNext] = useState<string>('');
-
   // Format YYYY-MM-DD to MM/DD/YYYY
   const formatDate = (dateStr: string): string => {
     const [year, month, day] = dateStr.split('-');
     return `${month}/${day}/${year}`;
   };
 
-  // Calculate time until next game (midnight)
+  function getTimeUntilMidnight(): string {
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    const diff = tomorrow.getTime() - now.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+
+  const [timeUntilNext, setTimeUntilNext] = useState<string>(() => getTimeUntilMidnight());
+
+  // Update countdown every second
   useEffect(() => {
-    function updateCountdown() {
-      const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      tomorrow.setHours(0, 0, 0, 0);
-      
-      const diff = tomorrow.getTime() - now.getTime();
-      
-      const hours = Math.floor(diff / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      
-      setTimeUntilNext(`${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
-    }
-    
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
-    
+    setTimeUntilNext(getTimeUntilMidnight());
+    const interval = setInterval(() => setTimeUntilNext(getTimeUntilMidnight()), 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -173,18 +169,16 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
         <p className="text-white text-xl font-semibold">
           Come back tomorrow for the next round
         </p>
-        
-        {lastPlayed && (
-          <p className="text-sm text-white/70 font-medium">
-            Last played: {formatDate(lastPlayed)}
+
+        {/* Last played & Next game - always visible on this screen */}
+        <div className="w-full max-w-sm mx-auto rounded-xl bg-white/15 backdrop-blur-sm border-2 border-white/25 p-4 space-y-3">
+          <p className="text-sm text-white/90 font-semibold">
+            Last played: {lastPlayed ? formatDate(lastPlayed) : todaysGame ? 'Today' : '—'}
           </p>
-        )}
-        
-        {timeUntilNext && (
-          <p className="text-sm text-white/70 font-medium">
-            Next game in: <span className="font-mono font-bold">{timeUntilNext}</span>
+          <p className="text-sm text-white/90 font-semibold">
+            Next game in: <span className="font-mono font-bold text-amber-300 text-lg">{timeUntilNext}</span>
           </p>
-        )}
+        </div>
         
         <div className="pt-4">
           <button
