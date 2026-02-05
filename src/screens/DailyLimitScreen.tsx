@@ -112,9 +112,11 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                         <div className="text-white font-semibold text-sm">
                           {questions[0].year} NFL Draft
                         </div>
-                        <div className="text-white/70 text-xs mt-0.5">
-                          {getPickLabel(questions[0].missingSlotIndex)} missing: {questions[0].correctAnswer}
-                        </div>
+                        {!todaysGame.correct_draft && (
+                          <div className="text-white/70 text-xs mt-0.5">
+                            {getPickLabel(questions[0].missingSlotIndex)} missing: {questions[0].correctAnswer}
+                          </div>
+                        )}
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}`}>
                         {todaysGame.correct_draft ? '✓' : '✗'}
@@ -129,9 +131,11 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                         <div className="text-white font-semibold text-sm">
                           Which college did {questions[1].name} attend?
                         </div>
-                        <div className="text-white/70 text-xs mt-0.5">
-                          Correct: {questions[1].college}
-                        </div>
+                        {!todaysGame.correct_college && (
+                          <div className="text-white/70 text-xs mt-0.5">
+                            Correct: {questions[1].college}
+                          </div>
+                        )}
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}`}>
                         {todaysGame.correct_college ? '✓' : '✗'}
@@ -149,9 +153,11 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                         <div className="text-white/70 text-xs mt-0.5">
                           {questions[2].college} → {questions[2].nflStints.map(s => s.team).join(', ')}
                         </div>
-                        <div className="text-white/70 text-xs mt-0.5">
-                          Correct: {questions[2].correctAnswer}
-                        </div>
+                        {!todaysGame.correct_career_path && (
+                          <div className="text-white/70 text-xs mt-0.5">
+                            Correct: {questions[2].correctAnswer}
+                          </div>
+                        )}
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_career_path ? 'text-green-300' : 'text-red-300'}`}>
                         {todaysGame.correct_career_path ? '✓' : '✗'}
@@ -159,37 +165,46 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                     </div>
                   </div>
                 )}
-                {questions[3]?.type === 'seasonLeader' && (
-                  <div>
-                    <div className="flex items-start justify-between mb-1">
-                      <div className="flex-1">
-                        <div className="text-white font-semibold text-sm">
-                          Who led the NFL in{' '}
-                          {questions[3].category === 'passingTDs'
-                            ? 'passing touchdowns'
-                            : questions[3].category === 'rushingTDs'
-                              ? 'rushing touchdowns'
-                              : questions[3].category === 'receivingTDs'
-                                ? 'receiving touchdowns'
-                                : questions[3].category === 'sacks'
-                                  ? 'sacks'
-                                  : questions[3].category === 'interceptions'
-                                    ? 'interceptions'
-                                    : questions[3].category === 'passing'
-                                      ? 'passing yards'
-                                      : questions[3].category === 'rushing'
-                                        ? 'rushing yards'
-                                        : 'receiving yards'}{' '}
-                          in {questions[3].year}?
+                {questions[3]?.type === 'seasonLeader' && (() => {
+                  // Infer if season leader was correct: if all 3 other questions are correct and total correct = 4, then season leader was correct
+                  const otherThreeCorrect = (todaysGame.correct_draft ? 1 : 0) + (todaysGame.correct_college ? 1 : 0) + (todaysGame.correct_career_path ? 1 : 0);
+                  const seasonLeaderCorrect = todaysGame.correct_answers === 4 && otherThreeCorrect === 3;
+                  return (
+                    <div>
+                      <div className="flex items-start justify-between mb-1">
+                        <div className="flex-1">
+                          <div className="text-white font-semibold text-sm">
+                            Who led the NFL in{' '}
+                            {questions[3].category === 'passingTDs'
+                              ? 'passing touchdowns'
+                              : questions[3].category === 'rushingTDs'
+                                ? 'rushing touchdowns'
+                                : questions[3].category === 'receivingTDs'
+                                  ? 'receiving touchdowns'
+                                  : questions[3].category === 'sacks'
+                                    ? 'sacks'
+                                    : questions[3].category === 'interceptions'
+                                      ? 'interceptions'
+                                      : questions[3].category === 'passing'
+                                        ? 'passing yards'
+                                        : questions[3].category === 'rushing'
+                                          ? 'rushing yards'
+                                          : 'receiving yards'}{' '}
+                            in {questions[3].year}?
+                          </div>
+                          {!seasonLeaderCorrect && (
+                            <div className="text-white/70 text-xs mt-0.5">
+                              Correct: {questions[3].correctAnswer}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-white/70 text-xs mt-0.5">
-                          Correct: {questions[3].correctAnswer}
-                        </div>
+                        <span className={`font-bold ml-2 ${seasonLeaderCorrect ? 'text-green-300' : 'text-red-300'}`}>
+                          {seasonLeaderCorrect ? '✓' : '✗'}
+                        </span>
                       </div>
-                      <span className="text-white/50 text-xs ml-2">—</span>
                     </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </div>
