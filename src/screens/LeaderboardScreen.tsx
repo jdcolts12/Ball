@@ -25,7 +25,7 @@ interface LeaderboardScreenProps {
 }
 
 /** Daily: request enough rows to show everyone who played today. Monthly/Career: smaller limit. */
-const DAILY_LEADERBOARD_LIMIT = 5000;
+const DAILY_LEADERBOARD_LIMIT = 10000;
 const OTHER_LEADERBOARD_LIMIT = 500;
 
 function fetchLeaderboard(tab: Tab): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
@@ -120,13 +120,13 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
         {!loading && !error && (
           <div className="flex-1 min-h-0 flex flex-col -mx-1 sm:mx-0 bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden">
             <div className="flex-1 min-h-0 overflow-auto overscroll-contain p-2 sm:p-3">
-              <table className="w-full min-w-[260px] text-left text-xs sm:text-sm">
+              <table className="w-full min-w-[300px] text-left text-xs sm:text-sm">
                 <thead className="sticky top-0 z-[1] bg-green-800/95 backdrop-blur-sm">
                   <tr className="border-b-2 border-white/20">
-                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">#</th>
-                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">Username</th>
-                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">{scoreLabel}</th>
-                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">%</th>
+                    <th className="py-1.5 pr-2 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap w-10">#</th>
+                    <th className="py-1.5 pr-3 sm:py-2 sm:pr-4 text-white font-bold whitespace-nowrap min-w-[120px]">Username</th>
+                    <th className="py-1.5 pr-2 sm:py-2 sm:pr-2 text-white font-bold whitespace-nowrap w-16 text-right">{scoreLabel}</th>
+                    <th className="py-1.5 pr-2 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap w-14 text-right">%</th>
                     <th className="py-1.5 sm:py-2 text-white font-bold whitespace-nowrap">Badges</th>
                   </tr>
                 </thead>
@@ -140,13 +140,15 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
                   ) : (
                     rows.map((r) => (
                       <tr key={`${r.rank}-${r.username}-${r.score}`} className="border-b border-white/10">
-                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 font-black text-yellow-400">{r.rank}</td>
-                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-semibold max-w-[90px] sm:max-w-[140px] truncate" title={r.username}>{r.username}</td>
-                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white">{r.score}</td>
-                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-medium">{r.pctCorrect}%</td>
-                        <td className="py-1.5 sm:py-2">
+                        <td className="py-1.5 pr-2 sm:py-2 sm:pr-3 font-black text-yellow-400 align-middle">{r.rank}</td>
+                        <td className="py-1.5 pr-3 sm:py-2 sm:pr-4 text-white font-semibold align-middle" title={r.username}>
+                          <span className="block truncate max-w-[200px] sm:max-w-none">{r.username}</span>
+                        </td>
+                        <td className="py-1.5 pr-2 sm:py-2 sm:pr-2 text-white align-middle text-right">{r.score}</td>
+                        <td className="py-1.5 pr-2 sm:py-2 sm:pr-3 text-white font-medium align-middle text-right">{r.pctCorrect}%</td>
+                        <td className="py-1.5 sm:py-2 align-middle">
                           {r.badges && r.badges.length > 0 ? (
-                            <div className="flex flex-wrap gap-0.5 sm:gap-1">
+                            <div className="flex flex-wrap items-center gap-0.5 sm:gap-1">
                               {r.badges.map((badgeId) => (
                                 <span
                                   key={badgeId}

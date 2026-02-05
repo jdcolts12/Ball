@@ -38,7 +38,7 @@ as $$
   from ordered o
   join public.profiles p on p.id = o.user_id
   order by o.pct desc nulls last, o.score desc nulls last
-  limit least(coalesce(nullif(limit_rows, 0), 5000), 10000);
+  limit coalesce(nullif(limit_rows, 0), 10000);
 $$;
 
 comment on function public.get_daily_leaderboard(int) is 'Returns daily leaderboard: all users who played today, ordered by % correct (best to worst). No hard cap so all players are shown.';
