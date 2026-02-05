@@ -169,9 +169,12 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                   </div>
                 )}
                 {questions[3]?.type === 'seasonLeader' && (() => {
-                  // Infer if season leader was correct: if all 3 other questions are correct and total correct = 4, then season leader was correct
+                  // Infer if season leader was correct:
+                  // Count how many of the other 3 questions were correct
                   const otherThreeCorrect = (todaysGame.correct_draft ? 1 : 0) + (todaysGame.correct_college ? 1 : 0) + (todaysGame.correct_career_path ? 1 : 0);
-                  const seasonLeaderCorrect = todaysGame.correct_answers === 4 && otherThreeCorrect === 3;
+                  // Season leader is correct if total correct answers > other three correct
+                  // (meaning season leader contributed to the total)
+                  const seasonLeaderCorrect = todaysGame.correct_answers > otherThreeCorrect;
                   return (
                     <div>
                       <div className="flex items-start justify-between mb-1">

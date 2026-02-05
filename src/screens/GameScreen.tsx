@@ -29,8 +29,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [correctCount, setCorrectCount] = useState(0);
   /** Per-question correct: [draft, college, careerPath, seasonLeader] */
   const [correctByType, setCorrectByType] = useState<[boolean, boolean, boolean, boolean]>([false, false, false, false]);
-  /** Per-question user answers: [draft, college, careerPath, seasonLeader] */
-  const [userAnswersByType, setUserAnswersByType] = useState<[string | undefined, string | undefined, string | undefined, string | undefined]>([undefined, undefined, undefined, undefined]);
+  /** Per-question user answers: [draft, college, careerPath, seasonLeader] - use ref to avoid stale closure issues */
+  const userAnswersByTypeRef = useRef<[string | undefined, string | undefined, string | undefined, string | undefined]>([undefined, undefined, undefined, undefined]);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   /** For career path: fill-in-the-blank guess. */
@@ -91,16 +91,12 @@ export function GameScreen({ onEnd }: GameScreenProps) {
       const isCareerPath = current.type === 'careerPath';
       const isSeasonLeader = current.type === 'seasonLeader';
 
-      // Store user answer for this question
+      // Store user answer for this question (use ref to avoid stale closure)
       const userAnswer = isCareerPath ? careerPathGuess : choice;
-      setUserAnswersByType((prev) => {
-        const next: [string | undefined, string | undefined, string | undefined, string | undefined] = [...prev];
-        if (isDraft) next[0] = userAnswer;
-        else if (isCollege) next[1] = userAnswer;
-        else if (isCareerPath) next[2] = userAnswer;
-        else if (isSeasonLeader) next[3] = userAnswer;
-        return next;
-      });
+      if (isDraft) userAnswersByTypeRef.current[0] = userAnswer;
+      else if (isCollege) userAnswersByTypeRef.current[1] = userAnswer;
+      else if (isCareerPath) userAnswersByTypeRef.current[2] = userAnswer;
+      else if (isSeasonLeader) userAnswersByTypeRef.current[3] = userAnswer;
 
       setTimeout(() => {
         if (index + 1 >= questions.length) {
@@ -108,8 +104,9 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           const finalCollege = isCollege ? correct : correctByType[1];
           const finalCareerPath = isCareerPath ? correct : correctByType[2];
           const finalSeasonLeader = isSeasonLeader ? correct : correctByType[3];
-          // Get final answers - use current answer if this is the last question, otherwise use stored
-          const finalAnswers: [string | undefined, string | undefined, string | undefined, string | undefined] = [...userAnswersByType];
+          // Get final answers from ref (always up-to-date)
+          const finalAnswers: [string | undefined, string | undefined, string | undefined, string | undefined] = [...userAnswersByTypeRef.current];
+          // Ensure current answer is set (in case ref wasn't updated yet)
           if (isDraft) finalAnswers[0] = userAnswer;
           else if (isCollege) finalAnswers[1] = userAnswer;
           else if (isCareerPath) finalAnswers[2] = userAnswer;
