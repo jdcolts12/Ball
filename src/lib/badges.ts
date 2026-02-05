@@ -2,7 +2,7 @@
  * Badge system for YunoBall
  * 
  * Badges:
- * - Perfect Game: Get all 3 questions correct in one game
+ * - Perfect Game: Get all 4 questions correct in one game
  * - Perfect Game Streak: Consecutive days with perfect games (x2, x3, etc.)
  * - Career Percentage Badges: 75%, 85%, 95% career correct percentage
  */
@@ -39,15 +39,15 @@ export function calculatePerfectGameStreak(games: Array<{ created_at: string; co
     gamesByDate.get(date)!.push(game);
   }
   
-  // Check consecutive days for perfect games (all 3 correct)
+  // Check consecutive days for perfect games (all questions correct - 3 for old games, 4 for new games)
   let streak = 0;
   const dates = Array.from(gamesByDate.keys()).sort((a, b) => b.localeCompare(a)); // Most recent first
   
   for (let i = 0; i < dates.length; i++) {
     const date = dates[i];
     const dayGames = gamesByDate.get(date)!;
-    // Check if any game that day was perfect (3/3 correct)
-    const hasPerfectGame = dayGames.some(g => g.correct_answers === 3 && g.questions_answered === 3);
+    // Check if any game that day was perfect (all questions correct - works for both 3 and 4 question games)
+    const hasPerfectGame = dayGames.some(g => g.correct_answers === g.questions_answered && g.questions_answered >= 3);
     
     if (!hasPerfectGame) {
       break; // Streak broken
@@ -99,10 +99,15 @@ export function getCareerPercentageBadges(totalCorrect: number, totalQuestions: 
 /**
  * Get badges for a single game result.
  */
-export function getGameBadges(breakdown: { draftCorrect: boolean; collegeCorrect: boolean; careerPathCorrect: boolean }): Badge[] {
+export function getGameBadges(breakdown: { draftCorrect: boolean; collegeCorrect: boolean; careerPathCorrect: boolean; seasonLeaderCorrect?: boolean }): Badge[] {
   const badges: Badge[] = [];
   
-  const isPerfect = breakdown.draftCorrect && breakdown.collegeCorrect && breakdown.careerPathCorrect;
+  // Perfect game: all questions correct
+  // Old games (3 questions): check 3 fields
+  // New games (4 questions): check all 4 fields
+  const isPerfect = breakdown.seasonLeaderCorrect !== undefined
+    ? breakdown.draftCorrect && breakdown.collegeCorrect && breakdown.careerPathCorrect && breakdown.seasonLeaderCorrect
+    : breakdown.draftCorrect && breakdown.collegeCorrect && breakdown.careerPathCorrect;
   if (isPerfect) {
     badges.push({ id: 'perfect', label: 'Perfect Game', emoji: '🏆' });
   }

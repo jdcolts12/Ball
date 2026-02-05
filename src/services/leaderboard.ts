@@ -31,8 +31,8 @@ export async function getDailyLeaderboard(limit = 999999): Promise<{ rows: Leade
     const totalQuestions = Number(r.total_questions ?? 0);
     const badges: string[] = [];
     
-    // Perfect game badge for daily (score === 3 means all 3 questions correct)
-    if (score === 3) {
+    // Perfect game badge for daily (score === 4 means all 4 questions correct)
+    if (score === 4) {
       badges.push('perfect');
     }
     
@@ -40,7 +40,7 @@ export async function getDailyLeaderboard(limit = 999999): Promise<{ rows: Leade
       rank: Number(r.rank),
       username: r.username ?? 'Anonymous',
       score,
-      pctCorrect: totalQuestions > 0 ? pctFromTotals(totalCorrect, totalQuestions) : (score <= 0 ? 0 : Math.round((score / 3) * 100)),
+      pctCorrect: totalQuestions > 0 ? pctFromTotals(totalCorrect, totalQuestions) : (score <= 0 ? 0 : Math.round((score / 4) * 100)),
       badges: badges.length > 0 ? badges : undefined,
     };
   });

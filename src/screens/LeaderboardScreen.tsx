@@ -178,7 +178,7 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
           <h3 className="text-[10px] sm:text-xs font-bold text-white mb-1.5 uppercase tracking-wide">Badge Legend</h3>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] sm:text-xs text-white/90">
             {tab === 'daily' && (
-              <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.perfect}</span><strong>Perfect:</strong> 3/3 today</span>
+              <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.perfect}</span><strong>Perfect:</strong> 4/4 today</span>
             )}
             {tab === 'monthly' && (
               <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.streak}</span><strong>Streak:</strong> 2+ days perfect</span>
