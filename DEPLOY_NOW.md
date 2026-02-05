@@ -1,74 +1,26 @@
-# Get YunoBall v2.0 Live on Vercel (one checklist)
+# Deploy (detailed version)
 
-Use this **exact order** so the site shows the latest build (timer, daily limit, badges, version label).
-
----
-
-## 1. Push your code to GitHub
-
-Your app lives in the **football-trivia** folder and that folder is the git repo.
-
-1. Open **Terminal** (or Cursor’s terminal).
-2. Go to the app folder and push:
-
-   ```bash
-   cd "/Users/joeydias/Desktop/Cursor Project 1/football-trivia"
-   git status
-   git add -A
-   git commit -m "Deploy v2.0: timer, daily limit, badges, version label"
-   git push origin main
-   ```
-
-   If `git` isn’t found, use **GitHub Desktop**: open the `football-trivia` folder as the repository, then **Commit** and **Push**.
-
-3. Confirm on GitHub that the latest commit is there (refresh the repo page).
+**Prefer the short version:** see **START_HERE.md**.
 
 ---
 
-## 2. Set Vercel Root Directory correctly
+## 1. Push to GitHub
 
-Your **GitHub repo root** is the app (it has `package.json` and `index.html` at the top).
+- Folder: `football-trivia` (that folder is the git repo).
+- Terminal: `cd "/Users/joeydias/Desktop/Cursor Project 1/football-trivia"` then `git add -A && git commit -m "Updates" && git push origin main`.
+- Or GitHub Desktop: open `football-trivia`, then Commit → Push.
 
-1. Go to [vercel.com](https://vercel.com) → your project → **Settings** → **General**.
-2. Find **Root Directory**.
-3. It must be **empty** (or `.`).  
-   - If it’s set to `football-trivia`, **clear it** and save.  
-   - Wrong root = Vercel builds the wrong thing and the site won’t update.
+## 2. Vercel
 
----
+- **Settings** → **General** → **Root Directory**: leave *empty* (clear if it says `football-trivia`). Save.
+- **Deployments** → ⋯ on latest → **Redeploy** → uncheck “Redeploy with existing Build Cache” → **Redeploy**.
 
-## 3. Redeploy without cache
+## 3. Test
 
-1. In Vercel: **Deployments** tab.
-2. Open the **⋯** menu on the latest deployment → **Redeploy**.
-3. Check **“Redeploy with existing Build Cache”** → turn it **OFF** (uncheck).
-4. Click **Redeploy** and wait until it’s **Ready**.
+- Open your live URL in a **new incognito** window.
+- You should see “Version 2.0 — Feb 2026” on the home screen and “YunoBall – Daily NFL Trivia (v2.0)” in the tab title.
 
----
+## 4. If it still doesn’t update
 
-## 4. Test in a private/incognito window
-
-Caches can make the old site stick. Test in a **new incognito/private** window:
-
-1. Open the **live URL** (e.g. `https://your-app.vercel.app`).
-2. Check:
-   - **Browser tab title** is: `YunoBall – Daily NFL Trivia (v2.0)`  
-   - **Home screen** shows: `Version 2.0 — Feb 2026` under the tagline  
-3. If you see those two, the **new build is live**. Then test:
-   - Timer on each question
-   - One game per day (already-played screen with “Last played” and “Next game in”)
-   - Leaderboard with Refresh and badges (if you have qualifying data)
-
-If the tab title and version label are still old, repeat step 3 (redeploy without cache) and test again in a **new** incognito window.
-
----
-
-## 5. If it still doesn’t update
-
-- **Vercel** → **Settings** → **Environment Variables**: confirm `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set for Production.
-- **Vercel** → **Deployments**: confirm the latest deployment is from the commit you just pushed (same time/message).
-- Try a different browser or device in incognito to rule out local cache.
-
----
-
-**Summary:** Push from `football-trivia` → Root Directory empty on Vercel → Redeploy **without** cache → Test in incognito for “v2.0” in title and “Version 2.0 — Feb 2026” on the home screen.
+- Vercel → **Settings** → **Environment Variables**: ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set for Production.
+- Try another browser or device in incognito.

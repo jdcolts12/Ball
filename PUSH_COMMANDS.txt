@@ -1,0 +1,2 @@
+cd "/Users/joeydias/Desktop/Cursor Project 1/football-trivia"
+git push

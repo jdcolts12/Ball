@@ -1,0 +1,7 @@
+{
+  "name": "cursor-project-1",
+  "private": true,
+  "scripts": {
+    "dev": "cd football-trivia && npm run dev"
+  }
+}

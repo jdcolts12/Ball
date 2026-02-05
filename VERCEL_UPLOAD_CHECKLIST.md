@@ -1,0 +1,77 @@
+# Vercel upload checklist – football-trivia folder
+
+Your **football-trivia** folder is set up correctly for Vercel.
+
+---
+
+## Folder to use
+
+**Path on your Mac:**  
+`/Users/joeydias/Desktop/Cursor Project 1/football-trivia`
+
+In Finder: **Desktop** → **Cursor Project 1** → **football-trivia**
+
+---
+
+## What Vercel needs (must be uploaded)
+
+| Item | Status |
+|------|--------|
+| `package.json` (with `"build": "vite build"`) | ✓ |
+| `package-lock.json` | ✓ |
+| `index.html` | ✓ |
+| `vercel.json` (build + SPA rewrites) | ✓ |
+| `vite.config.ts` | ✓ |
+| `src/` (main.tsx, App.tsx, screens, etc.) | ✓ |
+| `tailwind.config.js`, `postcss.config.js` | ✓ |
+| `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json` | ✓ |
+| `eslint.config.js` | ✓ |
+| `supabase/` (migrations, RUN_THIS_ONCE.sql) | ✓ |
+
+---
+
+## Do NOT upload
+
+| Item | Why |
+|------|-----|
+| `node_modules/` | Too big; Vercel runs `npm install` |
+| `.env` | Contains secrets; use Vercel env vars instead |
+| `dist/` | Build output; Vercel builds it |
+
+Your `.gitignore` already excludes these. If you upload via GitHub, they won’t be included. If you drag-and-drop, don’t include `node_modules`, `.env`, or `dist`.
+
+---
+
+## If you push to GitHub (recommended)
+
+Upload the **contents** of the **football-trivia** folder so that at the **repo root** you have:
+
+- `package.json`
+- `index.html`
+- `vercel.json`
+- `src/`
+- `supabase/`
+- etc.
+
+Then in Vercel: **Root Directory** = leave **empty** (app is at repo root).
+
+---
+
+## If your repo has one folder (e.g. football-trivia)
+
+If the repo looks like:
+
+```
+your-repo/
+  football-trivia/
+    package.json
+    index.html
+    src/
+    ...
+```
+
+Then in Vercel set **Root Directory** = `football-trivia`.
+
+---
+
+You’re good to upload.

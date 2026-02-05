@@ -1,0 +1,13 @@
+Copy these EXACTLY into Vercel → Settings → Environment Variables:
+
+Variable 1:
+Key: VITE_SUPABASE_URL
+Value: https://yhxtyjfmpulmqoljbgmv.supabase.co
+Environment: Production (and Preview if you want)
+
+Variable 2:
+Key: VITE_SUPABASE_ANON_KEY
+Value: sb_publishable_WMBunFhzwNw7INgiXRi4tQ_32dwA73G
+Environment: Production (and Preview if you want)
+
+After adding both, go to Deployments → ⋯ → Redeploy

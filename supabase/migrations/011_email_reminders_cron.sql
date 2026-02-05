@@ -16,20 +16,23 @@ set search_path = public
 as $$
 declare
   edge_function_url text;
-  anon_key text;
+  service_role_key text;
   request_id bigint;
 begin
-  -- Get your Supabase project URL and anon key
+  -- Get your Supabase project URL and service_role key (for internal calls)
   -- Replace these with your actual values
-  edge_function_url := 'https://YOUR_PROJECT_ID.supabase.co/functions/v1/send-streak-reminders';
-  anon_key := 'YOUR_ANON_KEY'; -- Get from Supabase → Settings → API
+  edge_function_url := 'https://yhxtyjfmpulmqoljbgmv.supabase.co/functions/v1/send-streak-reminders';
+  -- Use service_role key for internal cron job calls (more secure than anon key)
+  service_role_key := 'YOUR_SERVICE_ROLE_KEY'; -- Get from Supabase → Settings → API → service_role key
   
   -- Call the Edge Function via HTTP using pg_net
+  -- Using service_role key allows the function to access all data without RLS restrictions
   select net.http_post(
     url := edge_function_url,
     headers := jsonb_build_object(
-      'Authorization', 'Bearer ' || anon_key,
-      'Content-Type', 'application/json'
+      'Authorization', 'Bearer ' || service_role_key,
+      'Content-Type', 'application/json',
+      'apikey', service_role_key
     ),
     body := '{}'::jsonb
   ) into request_id;

@@ -23,6 +23,9 @@ interface UserWithStreak {
 
 serve(async (req) => {
   try {
+    // Allow calls from cron job (no auth required) or with proper auth
+    // This function can be called internally by the database cron job
+    
     // Initialize Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',

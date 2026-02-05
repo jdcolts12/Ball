@@ -58,17 +58,17 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
   const scoreLabel = tab === 'alltime' ? 'Total correct' : 'Points';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-4 sm:p-6 relative overflow-y-auto overflow-x-hidden">
       {/* Football field pattern background */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="h-full w-full" style={{
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.1) 49px, rgba(255,255,255,0.1) 50px)',
         }}></div>
       </div>
       
-      <div className="relative z-10">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-3xl font-black text-white" style={{ 
+      <div className="relative z-10 flex-1 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <h1 className="text-2xl sm:text-3xl font-black text-white" style={{ 
           textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
         }}>
           Leaderboard
@@ -88,13 +88,13 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
           </button>
         </div>
       </div>
-      <div className="flex gap-2 mb-6">
+      <div className="flex flex-wrap gap-2 mb-4">
         {(['daily', 'monthly', 'alltime'] as const).map((t) => (
           <button
             key={t}
             type="button"
             onClick={() => setTab(t)}
-            className={`px-4 py-2 rounded-lg font-bold transition-all ${
+            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-bold text-sm sm:text-base transition-all ${
               tab === t ? 'bg-white text-green-900 shadow-lg' : 'bg-white/10 text-white/80 hover:bg-white/20 border-2 border-white/30'
             }`}
           >
@@ -104,39 +104,44 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
       </div>
       {loading && <p className="text-white/70">Loading...</p>}
       {error && <p className="text-red-300 text-sm mb-4 bg-red-900/30 p-2 rounded border border-red-500/50">{error}</p>}
+      {!loading && !error && rows.length > 0 && (
+        <p className="text-white/60 text-xs sm:text-sm mb-2">
+          Showing {rows.length} {rows.length === 1 ? 'player' : 'players'}
+        </p>
+      )}
       {!loading && !error && (
-        <div className="overflow-x-auto bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20">
-          <table className="w-full text-left">
+        <div className="overflow-x-auto overflow-y-visible -mx-1 sm:mx-0 bg-white/10 backdrop-blur-sm rounded-xl p-2 sm:p-4 border-2 border-white/20 min-w-0">
+          <table className="w-full min-w-[280px] text-left text-sm sm:text-base">
             <thead>
               <tr className="border-b-2 border-white/20">
-                <th className="py-3 pr-4 text-white font-bold">#</th>
-                <th className="py-3 pr-4 text-white font-bold">Username</th>
-                <th className="py-3 pr-4 text-white font-bold">{scoreLabel}</th>
-                <th className="py-3 pr-4 text-white font-bold">% correct</th>
-                <th className="py-3 text-white font-bold">Badges</th>
+                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">#</th>
+                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">Username</th>
+                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">{scoreLabel}</th>
+                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">%</th>
+                <th className="py-2 sm:py-3 text-white font-bold whitespace-nowrap">Badges</th>
               </tr>
             </thead>
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-6 text-white/70 text-center">
+                  <td colSpan={5} className="py-6 text-white/70 text-center text-sm sm:text-base">
                     No scores yet for {label.toLowerCase()}.
                   </td>
                 </tr>
               ) : (
                 rows.map((r) => (
-                  <tr key={`${r.rank}-${r.username}`} className="border-b border-white/10">
-                    <td className="py-3 pr-4 font-black text-yellow-400 text-lg">{r.rank}</td>
-                    <td className="py-3 pr-4 text-white font-semibold">{r.username}</td>
-                    <td className="py-3 pr-4 text-white">{r.score}</td>
-                    <td className="py-3 pr-4 text-white font-medium">{r.pctCorrect}%</td>
-                    <td className="py-3">
+                  <tr key={`${r.rank}-${r.username}-${r.score}`} className="border-b border-white/10">
+                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 font-black text-yellow-400 text-base sm:text-lg">{r.rank}</td>
+                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-semibold max-w-[100px] sm:max-w-none truncate" title={r.username}>{r.username}</td>
+                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 text-white">{r.score}</td>
+                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-medium">{r.pctCorrect}%</td>
+                    <td className="py-2 sm:py-3">
                       {r.badges && r.badges.length > 0 ? (
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-1">
                           {r.badges.map((badgeId) => (
                             <span
                               key={badgeId}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white/20 text-white border border-white/30 text-xs font-bold"
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded bg-white/20 text-white border border-white/30 text-xs font-bold"
                               title={BADGE_LABELS[badgeId as BadgeId] ?? badgeId}
                             >
                               <span>{BADGE_EMOJIS[badgeId as BadgeId] ?? '🏅'}</span>
@@ -159,9 +164,9 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
       )}
       
       {/* Badge Legend */}
-      <div className="relative z-10 mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20">
+      <div className="relative z-10 mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20 min-w-0">
         <h3 className="text-xs font-bold text-white mb-2 uppercase tracking-wide">Badge Legend</h3>
-        <div className="flex flex-wrap gap-3 text-xs">
+        <div className="flex flex-wrap gap-2 sm:gap-3 text-xs">
           {tab === 'daily' && (
             <div className="flex items-center gap-1.5">
               <span className="text-base">{BADGE_EMOJIS.perfect}</span>
