@@ -36,7 +36,8 @@ export function HomeScreen({ onStart, onLeaderboard, onSignOut, startingGame }: 
         <p className="text-white text-xl font-semibold mb-2 leading-relaxed">
           Daily NFL trivia. 3 questions, one round per day. Test Your Ball Knowledge
         </p>
-        <p className="text-white/50 text-sm mb-8">Updated Jan 2026 — timer, leaderboard, one game per day</p>
+        <p className="text-white/50 text-sm mb-2">Timer • One game per day • Leaderboard badges</p>
+        <p className="text-amber-300/90 text-xs font-bold mb-8">Version 2.0 — Feb 2026</p>
         <div className="space-y-4">
           <button
             type="button"
