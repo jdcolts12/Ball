@@ -62,8 +62,46 @@ export async function getCurrentStats(): Promise<{ stats: Stats | null; error: E
 }
 
 /**
- * Fetch today's game for the current user (most recent game created today, user's local date).
- * Uses local midnight → local end-of-day converted to ISO for UTC comparison.
+ * Get PST date boundaries (start and end of day) as ISO strings.
+ * Handles both PST (UTC-8) and PDT (UTC-7) automatically by detecting DST.
+ */
+function getPSTDateBoundaries(): { startISO: string; endISO: string } {
+  // Get current date in PST/PDT
+  const now = new Date();
+  const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+  
+  const pstDate = dateFormatter.format(now); // YYYY-MM-DD format
+  const [year, month, day] = pstDate.split('-').map(Number);
+  
+  // Determine if DST is in effect by checking what time UTC noon is in PST
+  // If UTC noon is 4am PST, it's PST (-08:00); if 5am PDT, it's PDT (-07:00)
+  const utcNoon = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
+  const pstHour = parseInt(utcNoon.toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: '2-digit',
+    hour12: false
+  }));
+  
+  // UTC noon = 4am PST means offset is -8; UTC noon = 5am PDT means offset is -7
+  const offset = pstHour === 4 ? '-08:00' : '-07:00';
+  
+  // Create ISO strings for PST midnight and end of day
+  const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+  const startISO = new Date(`${dateStr}T00:00:00${offset}`).toISOString();
+  const endISO = new Date(`${dateStr}T23:59:59.999${offset}`).toISOString();
+  
+  return { startISO, endISO };
+}
+
+/**
+ * Fetch today's game for the current user (most recent game created today, PST timezone).
+ * Uses PST midnight → PST end-of-day converted to ISO for UTC comparison.
+ * This matches the SQL functions which use PST timezone.
  */
 export async function getTodaysGame(): Promise<{ game: Game | null; error: Error | null }> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -71,11 +109,7 @@ export async function getTodaysGame(): Promise<{ game: Game | null; error: Error
     return { game: null, error: new Error('Not authenticated') };
   }
 
-  const now = new Date();
-  const startLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const endLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-  const startISO = startLocal.toISOString();
-  const endISO = endLocal.toISOString();
+  const { startISO, endISO } = getPSTDateBoundaries();
 
   const { data, error } = await supabase
     .from('games')
@@ -155,7 +189,7 @@ export async function getCareerPathCorrectPctToday(): Promise<CorrectPctTodayRes
   return getCorrectStatsToday('get_career_path_correct_pct_today');
 }
 
-/** Include current player's answer in the percentage (game isn't saved until all 3 questions are done). */
+/** Include current player's answer in the percentage (game isn't saved until all questions are done). */
 export function includeCurrentPlayer(total: number, correct: number, currentCorrect: boolean): number {
   const newTotal = total + 1;
   const newCorrect = correct + (currentCorrect ? 1 : 0);
