@@ -34,3 +34,21 @@
 ## Check it worked
 
 Open your live site in a **new incognito/private** window. You should see **“Version 2.0 — Feb 2026”** on the home screen and **“YunoBall – Daily NFL Trivia (v2.0)”** in the browser tab.
+
+---
+
+## Still not working? (Supabase message or old site)
+
+**1. Check env vars in Vercel**
+
+- **Settings** → **Environment Variables**
+- You must have **exactly** these two **Key** names (copy-paste, no typos):
+  - `VITE_SUPABASE_URL`
+  - `VITE_SUPABASE_ANON_KEY`
+- Each must be enabled for **Production** (checkbox).
+- Values: from Supabase → **Settings** → **API** → **Project URL** and **anon public** key.
+
+**2. Force a new deployment**
+
+- Push any change to GitHub (e.g. in GitHub Desktop: make a small edit, Commit, Push).
+- Vercel will build again and use the env vars. Wait 1–2 minutes, then open your live URL in a **new incognito** window.
