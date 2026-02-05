@@ -20,7 +20,11 @@ function pctFromTotals(totalCorrect: number, totalQuestions: number): number {
 
 export async function getDailyLeaderboard(limit = 999999): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
   const { data, error } = await supabase.rpc('get_daily_leaderboard', { limit_rows: limit });
-  if (error) return { rows: [], error: new Error(error.message) };
+  if (error) {
+    console.error('Daily leaderboard error:', error);
+    return { rows: [], error: new Error(error.message) };
+  }
+  console.log('Daily leaderboard returned', data?.length || 0, 'rows (requested limit:', limit, ')');
   const rows = (data ?? []).map((r: { rank: number; user_id: string; username: string; score: number; total_correct?: number; total_questions?: number }) => {
     const score = Number(r.score);
     const totalCorrect = Number(r.total_correct ?? 0);
