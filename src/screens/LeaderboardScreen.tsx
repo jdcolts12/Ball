@@ -24,9 +24,12 @@ interface LeaderboardScreenProps {
   onBack: () => void;
 }
 
+/** Request enough rows to show everyone who played (daily can have many users). */
+const LEADERBOARD_LIMIT = 500;
+
 function fetchLeaderboard(tab: Tab): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
   const fn = tab === 'daily' ? getDailyLeaderboard : tab === 'monthly' ? getMonthlyLeaderboard : getAllTimeLeaderboard;
-  return fn(100);
+  return fn(LEADERBOARD_LIMIT);
 }
 
 export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
@@ -49,11 +52,7 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
     load();
   }, [load]);
 
-  useEffect(() => {
-    const onFocus = () => load();
-    window.addEventListener('focus', onFocus);
-    return () => window.removeEventListener('focus', onFocus);
-  }, [load]);
+  // No auto-refresh on window focus so the daily leaderboard doesn't "randomly" refresh when switching tabs
 
   const label = tab === 'daily' ? 'Daily' : tab === 'monthly' ? 'Monthly' : 'Career';
   const scoreLabel = tab === 'alltime' ? 'Total correct' : 'Points';
