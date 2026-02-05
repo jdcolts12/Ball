@@ -24,12 +24,14 @@ interface LeaderboardScreenProps {
   onBack: () => void;
 }
 
-/** Request enough rows to show everyone who played (daily can have many users). */
-const LEADERBOARD_LIMIT = 500;
+/** Daily: request enough rows to show everyone who played today. Monthly/Career: smaller limit. */
+const DAILY_LEADERBOARD_LIMIT = 5000;
+const OTHER_LEADERBOARD_LIMIT = 500;
 
 function fetchLeaderboard(tab: Tab): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
+  const limit = tab === 'daily' ? DAILY_LEADERBOARD_LIMIT : OTHER_LEADERBOARD_LIMIT;
   const fn = tab === 'daily' ? getDailyLeaderboard : tab === 'monthly' ? getMonthlyLeaderboard : getAllTimeLeaderboard;
-  return fn(LEADERBOARD_LIMIT);
+  return fn(limit);
 }
 
 export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
@@ -58,145 +60,136 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
   const scoreLabel = tab === 'alltime' ? 'Total correct' : 'Points';
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-4 sm:p-6 relative overflow-y-auto overflow-x-hidden">
+    <div className="h-screen max-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-3 sm:p-4 relative overflow-hidden">
       {/* Football field pattern background */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="h-full w-full" style={{
           backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.1) 49px, rgba(255,255,255,0.1) 50px)',
         }}></div>
       </div>
-      
-      <div className="relative z-10 flex-1 min-w-0">
-      <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-        <h1 className="text-2xl sm:text-3xl font-black text-white" style={{ 
-          textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
-        }}>
-          Leaderboard
-        </h1>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => load()}
-            disabled={loading}
-            className="px-3 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-sm font-semibold transition-all backdrop-blur-sm disabled:opacity-50"
-            title="Refresh"
-          >
-            ↻ Refresh
-          </button>
-          <button type="button" onClick={onBack} className="px-4 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-sm font-semibold transition-all backdrop-blur-sm">
-            Back
-          </button>
+
+      <div className="relative z-10 flex flex-col flex-1 min-h-0 gap-2 sm:gap-3">
+        {/* Header: title + buttons */}
+        <div className="flex flex-shrink-0 flex-wrap items-center justify-between gap-2">
+          <h1 className="text-xl sm:text-2xl font-black text-white" style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}>
+            Leaderboard
+          </h1>
+          <div className="flex gap-1.5 sm:gap-2">
+            <button
+              type="button"
+              onClick={() => load()}
+              disabled={loading}
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all backdrop-blur-sm disabled:opacity-50"
+              title="Refresh"
+            >
+              ↻ Refresh
+            </button>
+            <button type="button" onClick={onBack} className="px-3 py-1.5 sm:px-4 sm:py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all backdrop-blur-sm">
+              Back
+            </button>
+          </div>
         </div>
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {(['daily', 'monthly', 'alltime'] as const).map((t) => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setTab(t)}
-            className={`px-3 py-2 sm:px-4 sm:py-2 rounded-lg font-bold text-sm sm:text-base transition-all ${
-              tab === t ? 'bg-white text-green-900 shadow-lg' : 'bg-white/10 text-white/80 hover:bg-white/20 border-2 border-white/30'
-            }`}
-          >
-            {t === 'daily' ? 'Daily' : t === 'monthly' ? 'Monthly' : 'Career'}
-          </button>
-        ))}
-      </div>
-      {loading && <p className="text-white/70">Loading...</p>}
-      {error && <p className="text-red-300 text-sm mb-4 bg-red-900/30 p-2 rounded border border-red-500/50">{error}</p>}
-      {!loading && !error && rows.length > 0 && (
-        <p className="text-white/60 text-xs sm:text-sm mb-2">
-          Showing {rows.length} {rows.length === 1 ? 'player' : 'players'}
-        </p>
-      )}
-      {!loading && !error && (
-        <div className="overflow-x-auto overflow-y-visible -mx-1 sm:mx-0 bg-white/10 backdrop-blur-sm rounded-xl p-2 sm:p-4 border-2 border-white/20 min-w-0">
-          <table className="w-full min-w-[280px] text-left text-sm sm:text-base">
-            <thead>
-              <tr className="border-b-2 border-white/20">
-                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">#</th>
-                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">Username</th>
-                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">{scoreLabel}</th>
-                <th className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-bold whitespace-nowrap">%</th>
-                <th className="py-2 sm:py-3 text-white font-bold whitespace-nowrap">Badges</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-6 text-white/70 text-center text-sm sm:text-base">
-                    No scores yet for {label.toLowerCase()}.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={`${r.rank}-${r.username}-${r.score}`} className="border-b border-white/10">
-                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 font-black text-yellow-400 text-base sm:text-lg">{r.rank}</td>
-                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-semibold max-w-[100px] sm:max-w-none truncate" title={r.username}>{r.username}</td>
-                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 text-white">{r.score}</td>
-                    <td className="py-2 pr-2 sm:py-3 sm:pr-4 text-white font-medium">{r.pctCorrect}%</td>
-                    <td className="py-2 sm:py-3">
-                      {r.badges && r.badges.length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {r.badges.map((badgeId) => (
-                            <span
-                              key={badgeId}
-                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded bg-white/20 text-white border border-white/30 text-xs font-bold"
-                              title={BADGE_LABELS[badgeId as BadgeId] ?? badgeId}
-                            >
-                              <span>{BADGE_EMOJIS[badgeId as BadgeId] ?? '🏅'}</span>
-                              {badgeId === 'streak' && r.streakCount && (
-                                <span>x{r.streakCount}</span>
-                              )}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-white/40">—</span>
-                      )}
-                    </td>
+
+        {/* Tabs */}
+        <div className="flex flex-shrink-0 gap-1.5 sm:gap-2">
+          {(['daily', 'monthly', 'alltime'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`px-2.5 py-1.5 sm:px-4 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition-all ${
+                tab === t ? 'bg-white text-green-900 shadow-lg' : 'bg-white/10 text-white/80 hover:bg-white/20 border-2 border-white/30'
+              }`}
+            >
+              {t === 'daily' ? 'Daily' : t === 'monthly' ? 'Monthly' : 'Career'}
+            </button>
+          ))}
+        </div>
+
+        {loading && <p className="flex-shrink-0 text-white/70 text-sm">Loading...</p>}
+        {error && (
+          <p className="flex-shrink-0 text-red-300 text-xs sm:text-sm p-2 rounded border border-red-500/50 bg-red-900/30">{error}</p>
+        )}
+        {!loading && !error && rows.length > 0 && (
+          <p className="flex-shrink-0 text-white/60 text-xs">
+            Showing {rows.length} {rows.length === 1 ? 'player' : 'players'}
+          </p>
+        )}
+
+        {/* Table: scrollable area that fills remaining space */}
+        {!loading && !error && (
+          <div className="flex-1 min-h-0 flex flex-col -mx-1 sm:mx-0 bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden">
+            <div className="flex-1 min-h-0 overflow-auto overscroll-contain p-2 sm:p-3">
+              <table className="w-full min-w-[260px] text-left text-xs sm:text-sm">
+                <thead className="sticky top-0 z-[1] bg-green-800/95 backdrop-blur-sm">
+                  <tr className="border-b-2 border-white/20">
+                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">#</th>
+                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">Username</th>
+                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">{scoreLabel}</th>
+                    <th className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-bold whitespace-nowrap">%</th>
+                    <th className="py-1.5 sm:py-2 text-white font-bold whitespace-nowrap">Badges</th>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      )}
-      
-      {/* Badge Legend */}
-      <div className="relative z-10 mt-4 bg-white/10 backdrop-blur-sm rounded-lg p-2.5 border border-white/20 min-w-0">
-        <h3 className="text-xs font-bold text-white mb-2 uppercase tracking-wide">Badge Legend</h3>
-        <div className="flex flex-wrap gap-2 sm:gap-3 text-xs">
-          {tab === 'daily' && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-base">{BADGE_EMOJIS.perfect}</span>
-              <span className="text-white/90"><strong>Perfect Game:</strong> Got all 3 questions correct today</span>
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 text-white/70 text-center text-sm">
+                        No scores yet for {label.toLowerCase()}.
+                      </td>
+                    </tr>
+                  ) : (
+                    rows.map((r) => (
+                      <tr key={`${r.rank}-${r.username}-${r.score}`} className="border-b border-white/10">
+                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 font-black text-yellow-400">{r.rank}</td>
+                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-semibold max-w-[90px] sm:max-w-[140px] truncate" title={r.username}>{r.username}</td>
+                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white">{r.score}</td>
+                        <td className="py-1.5 pr-1.5 sm:py-2 sm:pr-3 text-white font-medium">{r.pctCorrect}%</td>
+                        <td className="py-1.5 sm:py-2">
+                          {r.badges && r.badges.length > 0 ? (
+                            <div className="flex flex-wrap gap-0.5 sm:gap-1">
+                              {r.badges.map((badgeId) => (
+                                <span
+                                  key={badgeId}
+                                  className="inline-flex items-center gap-0.5 px-1 py-0.5 sm:px-1.5 sm:py-0.5 rounded bg-white/20 text-white border border-white/30 text-[10px] sm:text-xs font-bold"
+                                  title={BADGE_LABELS[badgeId as BadgeId] ?? badgeId}
+                                >
+                                  <span>{BADGE_EMOJIS[badgeId as BadgeId] ?? '🏅'}</span>
+                                  {badgeId === 'streak' && r.streakCount && <span>x{r.streakCount}</span>}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-white/40">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
-          {tab === 'monthly' && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-base">{BADGE_EMOJIS.streak}</span>
-              <span className="text-white/90"><strong>Perfect Game Streak:</strong> 2+ consecutive days with perfect games</span>
-            </div>
-          )}
-          {tab === 'alltime' && (
-            <>
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">{BADGE_EMOJIS.career95}</span>
-                <span className="text-white/90">95%+ lifetime correct percentage</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">{BADGE_EMOJIS.career85}</span>
-                <span className="text-white/90">85%+ lifetime correct percentage</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-base">{BADGE_EMOJIS.career75}</span>
-                <span className="text-white/90">75%+ lifetime correct percentage</span>
-              </div>
-            </>
-          )}
+          </div>
+        )}
+
+        {/* Badge Legend - compact at bottom */}
+        <div className="flex-shrink-0 bg-white/10 backdrop-blur-sm rounded-lg p-2 border border-white/20">
+          <h3 className="text-[10px] sm:text-xs font-bold text-white mb-1.5 uppercase tracking-wide">Badge Legend</h3>
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px] sm:text-xs text-white/90">
+            {tab === 'daily' && (
+              <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.perfect}</span><strong>Perfect:</strong> 3/3 today</span>
+            )}
+            {tab === 'monthly' && (
+              <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.streak}</span><strong>Streak:</strong> 2+ days perfect</span>
+            )}
+            {tab === 'alltime' && (
+              <>
+                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career95}</span>95%+</span>
+                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career85}</span>85%+</span>
+                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career75}</span>75%+</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
       </div>
     </div>
   );

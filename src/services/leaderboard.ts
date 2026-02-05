@@ -18,7 +18,7 @@ function pctFromTotals(totalCorrect: number, totalQuestions: number): number {
   return totalQuestions <= 0 ? 0 : Math.round((totalCorrect / totalQuestions) * 100);
 }
 
-export async function getDailyLeaderboard(limit = 500): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
+export async function getDailyLeaderboard(limit = 5000): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
   const { data, error } = await supabase.rpc('get_daily_leaderboard', { limit_rows: limit });
   if (error) return { rows: [], error: new Error(error.message) };
   const rows = (data ?? []).map((r: { rank: number; user_id: string; username: string; score: number; total_correct?: number; total_questions?: number }) => {
@@ -50,15 +50,21 @@ export async function getMonthlyLeaderboard(limit = 500): Promise<{ rows: Leader
   // Get user_ids from leaderboard results
   const userIds = (data ?? []).map((r: { user_id: string }) => r.user_id).filter(Boolean);
   
-  // Fetch game history for all users in the leaderboard to calculate streaks
+  // Fetch only recent games (last 90 days) with a row limit — enough for streak calc, avoids slow fetch
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+  const since = ninetyDaysAgo.toISOString();
+
   let gamesByUserId = new Map<string, Game[]>();
   if (userIds.length > 0) {
     const { data: gamesData, error: gamesError } = await supabase
       .from('games')
       .select('*')
       .in('user_id', userIds)
-      .order('created_at', { ascending: false });
-    
+      .gte('created_at', since)
+      .order('created_at', { ascending: false })
+      .limit(2500);
+
     if (!gamesError && gamesData) {
       for (const game of gamesData as Game[]) {
         if (!gamesByUserId.has(game.user_id)) {

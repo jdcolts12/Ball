@@ -182,19 +182,19 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           <p className="text-slate-400 text-sm">
             Question {index + 1} of {questions.length}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <div
-              className={`inline-flex items-center justify-center min-w-[3.5rem] h-9 rounded-full font-bold text-sm tabular-nums transition-colors ${
+              className={`inline-flex items-center justify-center min-w-[2rem] h-6 rounded-full font-semibold text-xs tabular-nums transition-colors ${
                 timeRemaining <= 5
-                  ? 'bg-red-500/20 text-red-300 ring-2 ring-red-500/50'
+                  ? 'bg-red-500/20 text-red-300 ring-1 ring-red-500/50'
                   : timeRemaining <= 10
-                    ? 'bg-amber-500/20 text-amber-300 ring-2 ring-amber-500/50'
+                    ? 'bg-amber-500/20 text-amber-300 ring-1 ring-amber-500/50'
                     : 'bg-slate-700/80 text-slate-200 ring-1 ring-slate-600'
               }`}
             >
               {timeRemaining}
             </div>
-            <div className="w-24 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+            <div className="w-14 h-1 bg-slate-700 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-1000 ${
                   timeRemaining <= 5 ? 'bg-red-500' : timeRemaining <= 10 ? 'bg-amber-500' : 'bg-emerald-500'
