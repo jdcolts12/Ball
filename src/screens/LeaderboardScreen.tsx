@@ -137,9 +137,9 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
                             <span
                               key={badgeId}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white/20 text-white border border-white/30 text-xs font-bold"
-                              title={BADGE_LABELS[badgeId as BadgeId]}
+                              title={BADGE_LABELS[badgeId as BadgeId] ?? badgeId}
                             >
-                              <span>{BADGE_EMOJIS[badgeId as BadgeId]}</span>
+                              <span>{BADGE_EMOJIS[badgeId as BadgeId] ?? '🏅'}</span>
                               {badgeId === 'streak' && r.streakCount && (
                                 <span>x{r.streakCount}</span>
                               )}
