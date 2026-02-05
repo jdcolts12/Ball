@@ -159,6 +159,37 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                     </div>
                   </div>
                 )}
+                {questions[3]?.type === 'seasonLeader' && (
+                  <div>
+                    <div className="flex items-start justify-between mb-1">
+                      <div className="flex-1">
+                        <div className="text-white font-semibold text-sm">
+                          Who led the NFL in{' '}
+                          {questions[3].category === 'passingTDs'
+                            ? 'passing touchdowns'
+                            : questions[3].category === 'rushingTDs'
+                              ? 'rushing touchdowns'
+                              : questions[3].category === 'receivingTDs'
+                                ? 'receiving touchdowns'
+                                : questions[3].category === 'sacks'
+                                  ? 'sacks'
+                                  : questions[3].category === 'interceptions'
+                                    ? 'interceptions'
+                                    : questions[3].category === 'passing'
+                                      ? 'passing yards'
+                                      : questions[3].category === 'rushing'
+                                        ? 'rushing yards'
+                                        : 'receiving yards'}{' '}
+                          in {questions[3].year}?
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Correct: {questions[3].correctAnswer}
+                        </div>
+                      </div>
+                      <span className="text-white/50 text-xs ml-2">—</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

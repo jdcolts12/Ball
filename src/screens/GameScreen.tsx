@@ -10,6 +10,7 @@ export interface GameResultBreakdown {
   draftCorrect: boolean;
   collegeCorrect: boolean;
   careerPathCorrect: boolean;
+  seasonLeaderCorrect: boolean;
 }
 
 interface GameScreenProps {
@@ -22,8 +23,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
-  /** Per-question correct: [draft, college, careerPath] */
-  const [correctByType, setCorrectByType] = useState<[boolean, boolean, boolean]>([false, false, false]);
+  /** Per-question correct: [draft, college, careerPath, seasonLeader] */
+  const [correctByType, setCorrectByType] = useState<[boolean, boolean, boolean, boolean]>([false, false, false, false]);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   /** For career path: fill-in-the-blank guess. */
@@ -38,9 +39,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const correctAnswer =
     current.type === 'college'
       ? current.college
-      : current.type === 'careerPath'
-        ? current.correctAnswer
-        : current.correctAnswer;
+      : current.correctAnswer;
   const options = current.options;
 
   const handleAnswer = useCallback(
@@ -65,7 +64,11 @@ export function GameScreen({ onEnd }: GameScreenProps) {
       } else if (current.type === 'college') {
         getCollegeCorrectPctToday().then(({ total, correct: correctCount, error }) =>
           setQuestionCorrectPct(error ? null : includeCurrentPlayer(total, correctCount, currentCorrect)));
+      } else if (current.type === 'careerPath') {
+        getCareerPathCorrectPctToday().then(({ total, correct: correctCount, error }) =>
+          setQuestionCorrectPct(error ? null : includeCurrentPlayer(total, correctCount, currentCorrect)));
       } else {
+        // seasonLeader - use careerPath stats for now (or create new function later)
         getCareerPathCorrectPctToday().then(({ total, correct: correctCount, error }) =>
           setQuestionCorrectPct(error ? null : includeCurrentPlayer(total, correctCount, currentCorrect)));
       }
@@ -80,23 +83,27 @@ export function GameScreen({ onEnd }: GameScreenProps) {
       const isDraft = current.type === 'draft';
       const isCollege = current.type === 'college';
       const isCareerPath = current.type === 'careerPath';
+      const isSeasonLeader = current.type === 'seasonLeader';
 
       setTimeout(() => {
         if (index + 1 >= questions.length) {
           const finalDraft = isDraft ? correct : correctByType[0];
           const finalCollege = isCollege ? correct : correctByType[1];
           const finalCareerPath = isCareerPath ? correct : correctByType[2];
+          const finalSeasonLeader = isSeasonLeader ? correct : correctByType[3];
           onEnd(newScore, newCorrect, questions.length, {
             draftCorrect: finalDraft,
             collegeCorrect: finalCollege,
             careerPathCorrect: finalCareerPath,
+            seasonLeaderCorrect: finalSeasonLeader,
           });
         } else {
           setCorrectByType((prev) => {
-            const next: [boolean, boolean, boolean] = [...prev];
+            const next: [boolean, boolean, boolean, boolean] = [...prev];
             if (isDraft) next[0] = correct;
             else if (isCollege) next[1] = correct;
             else if (isCareerPath) next[2] = correct;
+            else if (isSeasonLeader) next[3] = correct;
             return next;
           });
           setIndex((i) => i + 1);
@@ -146,7 +153,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             timerIntervalRef.current = null;
           }
           // For timeout, we need to provide a wrong answer
-          // For draft/college: pick first wrong option
+          // For draft/college/seasonLeader: pick first wrong option
           // For careerPath: use empty string (will be wrong)
           const wrongAnswer = currentQuestion.type === 'careerPath' ? '' : currentOptions.find(opt => opt !== currentCorrectAnswer) || currentOptions[0];
           handleAnswer(wrongAnswer, true);
@@ -302,6 +309,30 @@ export function GameScreen({ onEnd }: GameScreenProps) {
               </div>
             )}
           </>
+        ) : current.type === 'seasonLeader' ? (
+          <>
+            <h2 className="text-2xl font-bold text-white text-center">
+              Who led the NFL in{' '}
+              <span className="text-amber-400">
+                {current.category === 'passingTDs'
+                  ? 'passing touchdowns'
+                  : current.category === 'rushingTDs'
+                    ? 'rushing touchdowns'
+                    : current.category === 'receivingTDs'
+                      ? 'receiving touchdowns'
+                      : current.category === 'sacks'
+                        ? 'sacks'
+                        : current.category === 'interceptions'
+                          ? 'interceptions'
+                          : current.category === 'passing'
+                            ? 'passing yards'
+                            : current.category === 'rushing'
+                              ? 'rushing yards'
+                              : 'receiving yards'}
+              </span>{' '}
+              in <span className="text-amber-400">{current.year}</span>?
+            </h2>
+          </>
         ) : (
           <h2 className="text-2xl font-bold text-white text-center">
             Which college did <span className="text-amber-400">{current.name}</span> attend?
@@ -333,7 +364,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             })}
           </div>
         )}
-        {answered && (current.type === 'draft' || current.type === 'college') && (
+        {answered && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader') && (
           <p className="text-slate-500 text-sm text-center mt-3">
             {questionCorrectPct !== null
               ? `${questionCorrectPct}% of players got this question correct.`

@@ -1,6 +1,7 @@
 import type { PlayerQuestion } from '../data/players';
 import { players } from '../data/players';
 import { careerPathPlayers } from '../data/careerPathPlayers';
+import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
 import { getLocalDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
 
@@ -33,7 +34,16 @@ export type CareerPathQuestion = {
   options: [string, string, string, string];
 };
 
-export type GameQuestion = CollegeQuestion | DraftQuestion | CareerPathQuestion;
+export type SeasonLeaderQuestion = {
+  type: 'seasonLeader';
+  year: number;
+  category: 'passing' | 'rushing' | 'receiving' | 'passingTDs' | 'rushingTDs' | 'receivingTDs' | 'sacks' | 'interceptions';
+  correctAnswer: string; // player name (or "Player Name (X TDs/sacks/INTs)" format if statValue present)
+  statValue?: number; // Optional stat value for the correct answer
+  options: [string, string, string, string]; // Formatted options (may include stat values)
+};
+
+export type GameQuestion = CollegeQuestion | DraftQuestion | CareerPathQuestion | SeasonLeaderQuestion;
 
 function hashString(s: string): number {
   let h = 0;
@@ -57,8 +67,8 @@ const shuffle = (date: string) => <T>(arr: T[]): T[] => {
 };
 
 /**
- * Returns the same 3 questions for everyone on the same calendar day:
- * 1 draft (missing player in top 10) + 1 college (which college) + 1 career path (guess player by college + NFL teams).
+ * Returns the same 4 questions for everyone on the same calendar day:
+ * 1 draft (missing player in top 10) + 1 college (which college) + 1 career path (guess player by college + NFL teams) + 1 season leader (single-season record).
  */
 export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
   const date = dateString ?? getLocalDateString();
@@ -103,5 +113,40 @@ export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
     options: doShuffle([pCollege.college, ...pCollege.wrongOptions]) as [string, string, string, string],
   };
 
-  return [draftQuestion, collegeQuestion, careerPathQuestion];
+  // Season leader question
+  const nSeasonLeaders = seasonLeaders.length;
+  const iSeasonLeader = seededIndex(hashString(date + 'season'), nSeasonLeaders);
+  const seasonLeader = seasonLeaders[iSeasonLeader];
+  
+  // Format options with stat values if present (for TDs, sacks, interceptions)
+  const formatOption = (name: string, statValue?: number, category?: string): string => {
+    if (statValue !== undefined) {
+      if (category === 'sacks') {
+        // Format sacks with decimals (e.g., 17.5)
+        return `${name} (${statValue} sacks)`;
+      } else if (category === 'interceptions') {
+        return `${name} (${statValue} INTs)`;
+      } else {
+        // For TDs (passingTDs, rushingTDs, receivingTDs)
+        return `${name} (${statValue} TDs)`;
+      }
+    }
+    return name;
+  };
+  
+  const correctOption = formatOption(seasonLeader.leader, seasonLeader.statValue, seasonLeader.category);
+  const wrongOptionsFormatted = seasonLeader.wrongOptions.map(opt => formatOption(opt.name, opt.statValue, seasonLeader.category));
+  
+  const allOptions = doShuffle([correctOption, ...wrongOptionsFormatted]) as [string, string, string, string];
+  
+  const seasonLeaderQuestion: SeasonLeaderQuestion = {
+    type: 'seasonLeader',
+    year: seasonLeader.year,
+    category: seasonLeader.category,
+    correctAnswer: correctOption, // Full formatted string for comparison
+    statValue: seasonLeader.statValue,
+    options: allOptions,
+  };
+
+  return [draftQuestion, collegeQuestion, careerPathQuestion, seasonLeaderQuestion];
 }
