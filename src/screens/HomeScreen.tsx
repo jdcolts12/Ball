@@ -33,11 +33,9 @@ export function HomeScreen({ onStart, onLeaderboard, onSignOut, startingGame }: 
           YunoBall
         </h1>
         <div className="h-1.5 w-32 bg-white mx-auto mb-6 rounded-full"></div>
-        <p className="text-white text-xl font-semibold mb-2 leading-relaxed">
-          Daily NFL trivia. 3 questions, one round per day. Test Your Ball Knowledge
+        <p className="text-white text-xl font-semibold mb-8 leading-relaxed">
+          Daily NFL trivia. One round per day.
         </p>
-        <p className="text-white/50 text-sm mb-2">Timer • One game per day • Leaderboard badges</p>
-        <p className="text-amber-300/90 text-xs font-bold mb-8">Version 2.1 — Leaderboard & Timer Fix</p>
         <div className="space-y-4">
           <button
             type="button"
