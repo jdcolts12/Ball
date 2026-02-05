@@ -2,13 +2,17 @@
 
 ## Done for you
 
-- **Code is committed and pushed to GitHub** (so your repo is up to date).
-- **Leaderboard** fixes (daily shows all players, mobile layout) are in the code.
-- **One SQL file** for Supabase: `PASTE_INTO_SUPABASE.txt` — it has only the SQL, no instructions.
+- **All code is committed** in the `football-trivia` folder (leaderboard fixes, mobile layout, START_HERE, PASTE_INTO_SUPABASE).
+- **One SQL file** for Supabase: `PASTE_INTO_SUPABASE.txt` — only the SQL, no instructions.
 
 ---
 
-## You do 2 things (only these)
+## You do 3 things (only these)
+
+### 0. Push to GitHub (once)
+
+- Open **GitHub Desktop**, open the **football-trivia** folder as the repo, then click **Push**.
+- Or in Terminal: `cd` into `football-trivia`, then run: `git push origin main` (and sign in if it asks).
 
 ### 1. Vercel (so the new site goes live)
 
