@@ -12,6 +12,10 @@ export async function recordCompletedGame(payload: {
   correctDraft?: boolean;
   correctCollege?: boolean;
   correctCareerPath?: boolean;
+  userAnswerDraft?: string;
+  userAnswerCollege?: string;
+  userAnswerCareerPath?: string;
+  userAnswerSeasonLeader?: string;
 }): Promise<{ gameId: string | null; error: Error | null }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
@@ -26,6 +30,10 @@ export async function recordCompletedGame(payload: {
     correct_draft: payload.correctDraft ?? false,
     correct_college: payload.correctCollege ?? false,
     correct_career_path: payload.correctCareerPath ?? false,
+    user_answer_draft: payload.userAnswerDraft ?? null,
+    user_answer_college: payload.userAnswerCollege ?? null,
+    user_answer_career_path: payload.userAnswerCareerPath ?? null,
+    user_answer_season_leader: payload.userAnswerSeasonLeader ?? null,
   };
 
   const { data, error } = await supabase

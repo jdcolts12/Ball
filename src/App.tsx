@@ -109,6 +109,10 @@ function App() {
               correctDraft: breakdown.draftCorrect,
               correctCollege: breakdown.collegeCorrect,
               correctCareerPath: breakdown.careerPathCorrect,
+              userAnswerDraft: breakdown.userAnswerDraft,
+              userAnswerCollege: breakdown.userAnswerCollege,
+              userAnswerCareerPath: breakdown.userAnswerCareerPath,
+              userAnswerSeasonLeader: breakdown.userAnswerSeasonLeader,
             })
               .then(() => recordPlay())
               .catch(() => {});

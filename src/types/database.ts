@@ -20,6 +20,10 @@ export interface Game {
   correct_draft?: boolean;
   correct_college?: boolean;
   correct_career_path?: boolean;
+  user_answer_draft?: string | null;
+  user_answer_college?: string | null;
+  user_answer_career_path?: string | null;
+  user_answer_season_leader?: string | null;
 }
 
 export interface Stats {
@@ -41,6 +45,10 @@ export interface GameInsert {
   correct_draft?: boolean;
   correct_college?: boolean;
   correct_career_path?: boolean;
+  user_answer_draft?: string | null;
+  user_answer_college?: string | null;
+  user_answer_career_path?: string | null;
+  user_answer_season_leader?: string | null;
 }
 
 export interface StatsUpdate {

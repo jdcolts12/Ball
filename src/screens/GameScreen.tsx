@@ -11,6 +11,10 @@ export interface GameResultBreakdown {
   collegeCorrect: boolean;
   careerPathCorrect: boolean;
   seasonLeaderCorrect: boolean;
+  userAnswerDraft?: string;
+  userAnswerCollege?: string;
+  userAnswerCareerPath?: string;
+  userAnswerSeasonLeader?: string;
 }
 
 interface GameScreenProps {
@@ -25,6 +29,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [correctCount, setCorrectCount] = useState(0);
   /** Per-question correct: [draft, college, careerPath, seasonLeader] */
   const [correctByType, setCorrectByType] = useState<[boolean, boolean, boolean, boolean]>([false, false, false, false]);
+  /** Per-question user answers: [draft, college, careerPath, seasonLeader] */
+  const [userAnswersByType, setUserAnswersByType] = useState<[string | undefined, string | undefined, string | undefined, string | undefined]>([undefined, undefined, undefined, undefined]);
   const [selected, setSelected] = useState<string | null>(null);
   const [answered, setAnswered] = useState(false);
   /** For career path: fill-in-the-blank guess. */
@@ -85,17 +91,38 @@ export function GameScreen({ onEnd }: GameScreenProps) {
       const isCareerPath = current.type === 'careerPath';
       const isSeasonLeader = current.type === 'seasonLeader';
 
+      // Store user answer for this question
+      const userAnswer = isCareerPath ? careerPathGuess : choice;
+      setUserAnswersByType((prev) => {
+        const next: [string | undefined, string | undefined, string | undefined, string | undefined] = [...prev];
+        if (isDraft) next[0] = userAnswer;
+        else if (isCollege) next[1] = userAnswer;
+        else if (isCareerPath) next[2] = userAnswer;
+        else if (isSeasonLeader) next[3] = userAnswer;
+        return next;
+      });
+
       setTimeout(() => {
         if (index + 1 >= questions.length) {
           const finalDraft = isDraft ? correct : correctByType[0];
           const finalCollege = isCollege ? correct : correctByType[1];
           const finalCareerPath = isCareerPath ? correct : correctByType[2];
           const finalSeasonLeader = isSeasonLeader ? correct : correctByType[3];
+          // Get final answers - use current answer if this is the last question, otherwise use stored
+          const finalAnswers: [string | undefined, string | undefined, string | undefined, string | undefined] = [...userAnswersByType];
+          if (isDraft) finalAnswers[0] = userAnswer;
+          else if (isCollege) finalAnswers[1] = userAnswer;
+          else if (isCareerPath) finalAnswers[2] = userAnswer;
+          else if (isSeasonLeader) finalAnswers[3] = userAnswer;
           onEnd(newScore, newCorrect, questions.length, {
             draftCorrect: finalDraft,
             collegeCorrect: finalCollege,
             careerPathCorrect: finalCareerPath,
             seasonLeaderCorrect: finalSeasonLeader,
+            userAnswerDraft: finalAnswers[0],
+            userAnswerCollege: finalAnswers[1],
+            userAnswerCareerPath: finalAnswers[2],
+            userAnswerSeasonLeader: finalAnswers[3],
           });
         } else {
           setCorrectByType((prev) => {

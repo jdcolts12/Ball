@@ -112,11 +112,12 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                         <div className="text-white font-semibold text-sm">
                           {questions[0].year} NFL Draft
                         </div>
-                        {!todaysGame.correct_draft && (
-                          <div className="text-white/70 text-xs mt-0.5">
-                            {getPickLabel(questions[0].missingSlotIndex)} missing: {questions[0].correctAnswer}
-                          </div>
-                        )}
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Your answer: <span className={todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_draft || '—'}</span>
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Correct: {questions[0].correctAnswer}
+                        </div>
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}`}>
                         {todaysGame.correct_draft ? '✓' : '✗'}
@@ -131,11 +132,12 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                         <div className="text-white font-semibold text-sm">
                           Which college did {questions[1].name} attend?
                         </div>
-                        {!todaysGame.correct_college && (
-                          <div className="text-white/70 text-xs mt-0.5">
-                            Correct: {questions[1].college}
-                          </div>
-                        )}
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Your answer: <span className={todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_college || '—'}</span>
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Correct: {questions[1].college}
+                        </div>
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}`}>
                         {todaysGame.correct_college ? '✓' : '✗'}
@@ -153,11 +155,12 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                         <div className="text-white/70 text-xs mt-0.5">
                           {questions[2].college} → {questions[2].nflStints.map(s => s.team).join(', ')}
                         </div>
-                        {!todaysGame.correct_career_path && (
-                          <div className="text-white/70 text-xs mt-0.5">
-                            Correct: {questions[2].correctAnswer}
-                          </div>
-                        )}
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Your answer: <span className={todaysGame.correct_career_path ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_career_path || '—'}</span>
+                        </div>
+                        <div className="text-white/70 text-xs mt-0.5">
+                          Correct: {questions[2].correctAnswer}
+                        </div>
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_career_path ? 'text-green-300' : 'text-red-300'}`}>
                         {todaysGame.correct_career_path ? '✓' : '✗'}
@@ -192,11 +195,12 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
                                           : 'receiving yards'}{' '}
                             in {questions[3].year}?
                           </div>
-                          {!seasonLeaderCorrect && (
-                            <div className="text-white/70 text-xs mt-0.5">
-                              Correct: {questions[3].correctAnswer}
-                            </div>
-                          )}
+                          <div className="text-white/70 text-xs mt-0.5">
+                            Your answer: <span className={seasonLeaderCorrect ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_season_leader || '—'}</span>
+                          </div>
+                          <div className="text-white/70 text-xs mt-0.5">
+                            Correct: {questions[3].correctAnswer}
+                          </div>
                         </div>
                         <span className={`font-bold ml-2 ${seasonLeaderCorrect ? 'text-green-300' : 'text-red-300'}`}>
                           {seasonLeaderCorrect ? '✓' : '✗'}
