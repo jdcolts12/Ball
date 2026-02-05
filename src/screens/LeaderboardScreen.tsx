@@ -25,7 +25,7 @@ interface LeaderboardScreenProps {
 }
 
 /** Daily: request enough rows to show everyone who played today. Monthly/Career: smaller limit. */
-const DAILY_LEADERBOARD_LIMIT = 10000;
+const DAILY_LEADERBOARD_LIMIT = 999999; // Effectively no limit - show all players
 const OTHER_LEADERBOARD_LIMIT = 500;
 
 function fetchLeaderboard(tab: Tab): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
