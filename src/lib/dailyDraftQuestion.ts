@@ -34,7 +34,9 @@ export function getDailyDraftQuestion(dateString?: string): DailyDraftQuestion {
   const seed = hashString(date);
   const classIndex = seed % draftClasses.length;
   const draft = draftClasses[classIndex];
-  const missingSlotIndex = (seed >> 8) % 10;
+  // Use a separate hash of date + 'slot' to ensure slot varies by day
+  const slotSeed = hashString(date + 'slot');
+  const missingSlotIndex = slotSeed % 10;
   const correctAnswer = draft.picks[missingSlotIndex];
 
   const shownPicks: (string | null)[] = draft.picks.map((p, i) =>
