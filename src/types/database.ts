@@ -6,9 +6,25 @@
 export interface Profile {
   id: string;
   username: string | null;
+  avatar_url: string | null;
   created_at: string;
   updated_at: string;
 }
+
+/** Public profile + stats returned by get_user_public_profile */
+export interface UserPublicProfile {
+  user_id: string;
+  username: string | null;
+  avatar_url: string | null;
+  career_pct: number;
+  total_correct: number;
+  total_questions: number;
+  consecutive_days_played: number;
+  best_perfect_streak: number;
+}
+
+/** Friendship status with another user */
+export type FriendshipStatus = 'friends' | 'pending_sent' | 'pending_received' | null;
 
 export interface Game {
   id: string;

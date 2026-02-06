@@ -4,6 +4,8 @@ import type { Game } from '../types/database';
 
 export interface LeaderboardRow {
   rank: number;
+  /** User ID for linking to profile (may be missing on older all-time data) */
+  userId?: string;
   username: string;
   score: number;
   /** Percent of correct answers (0–100). */
@@ -38,6 +40,7 @@ export async function getDailyLeaderboard(limit = 999999): Promise<{ rows: Leade
     
     return {
       rank: Number(r.rank),
+      userId: r.user_id ?? undefined,
       username: r.username ?? 'Anonymous',
       score,
       pctCorrect: totalQuestions > 0 ? pctFromTotals(totalCorrect, totalQuestions) : (score <= 0 ? 0 : Math.round((score / 4) * 100)),
@@ -96,6 +99,7 @@ export async function getMonthlyLeaderboard(limit = 500): Promise<{ rows: Leader
     
     return {
       rank: Number(r.rank),
+      userId: r.user_id ?? undefined,
       username: r.username ?? 'Anonymous',
       score,
       pctCorrect,
@@ -109,13 +113,14 @@ export async function getMonthlyLeaderboard(limit = 500): Promise<{ rows: Leader
 export async function getAllTimeLeaderboard(limit = 500): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
   const { data, error } = await supabase.rpc('get_all_time_leaderboard', { limit_rows: limit });
   if (error) return { rows: [], error: new Error(error.message) };
-  const rows = (data ?? []).map((r: { rank: number; username: string; total_correct: number; total_questions?: number }) => {
+  const rows = (data ?? []).map((r: { rank: number; user_id?: string; username: string; total_correct: number; total_questions?: number }) => {
     const totalCorrect = Number(r.total_correct);
     const totalQuestions = Number(r.total_questions ?? 0);
     const pctCorrect = pctFromTotals(totalCorrect, totalQuestions);
     const careerBadges = getCareerPercentageBadges(totalCorrect, totalQuestions);
     return {
       rank: Number(r.rank),
+      userId: r.user_id ?? undefined,
       username: r.username ?? 'Anonymous',
       score: totalCorrect,
       pctCorrect,

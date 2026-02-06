@@ -1,0 +1,293 @@
+import { useState, useEffect, useCallback } from 'react';
+import { getUserPublicProfile, updateMyProfile } from '../services/profile';
+import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '../services/friends';
+import { updateUsername } from '../services/auth';
+import type { UserPublicProfile } from '../types/database';
+import type { FriendshipStatus } from '../types/database';
+
+interface ProfileScreenProps {
+  userId: string;
+  currentUserId: string;
+  onBack: () => void;
+}
+
+export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenProps) {
+  const [profile, setProfile] = useState<UserPublicProfile | null>(null);
+  const [friendship, setFriendship] = useState<FriendshipStatus>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editAvatarUrl, setEditAvatarUrl] = useState('');
+  const [editUsername, setEditUsername] = useState('');
+
+  const isOwnProfile = userId === currentUserId;
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    const [profileRes, statusRes] = await Promise.all([
+      getUserPublicProfile(userId),
+      isOwnProfile ? Promise.resolve({ status: null as FriendshipStatus, error: null }) : getFriendshipStatus(userId),
+    ]);
+    if (profileRes.error) {
+      setError(profileRes.error.message);
+      setProfile(null);
+    } else {
+      setProfile(profileRes.profile ?? null);
+      if (profileRes.profile) {
+        setEditAvatarUrl(profileRes.profile.avatar_url ?? '');
+        setEditUsername(profileRes.profile.username ?? '');
+      }
+    }
+    if (!isOwnProfile && statusRes.error) {
+      setFriendship(null);
+    } else if (!isOwnProfile) {
+      setFriendship(statusRes.status ?? null);
+    }
+    setLoading(false);
+  }, [userId, isOwnProfile]);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  const handleSendRequest = async () => {
+    setActionBusy(true);
+    setActionError(null);
+    const res = await sendFriendRequest(userId);
+    if (res.ok) {
+      setFriendship(res.accepted ? 'friends' : 'pending_sent');
+    } else {
+      setActionError(res.error ?? 'Failed');
+    }
+    setActionBusy(false);
+  };
+
+  const handleAccept = async () => {
+    setActionBusy(true);
+    setActionError(null);
+    const res = await acceptFriendRequest(userId);
+    if (res.ok) {
+      setFriendship('friends');
+    } else {
+      setActionError(res.error ?? 'Failed');
+    }
+    setActionBusy(false);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!isOwnProfile) return;
+    setActionBusy(true);
+    setActionError(null);
+    const usernameErr = await updateUsername(currentUserId, editUsername.trim() || 'Anonymous');
+    if (usernameErr.error) {
+      setActionError(usernameErr.error.message);
+      setActionBusy(false);
+      return;
+    }
+    const avatarRes = await updateMyProfile({
+      avatar_url: editAvatarUrl.trim() || null,
+    });
+    if (avatarRes.error) {
+      setActionError(avatarRes.error.message);
+    } else {
+      setEditing(false);
+      setProfile((p) =>
+        p
+          ? {
+              ...p,
+              username: editUsername.trim() || null,
+              avatar_url: editAvatarUrl.trim() || null,
+            }
+          : null
+      );
+    }
+    setActionBusy(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col items-center justify-center p-6">
+        <p className="text-white/80">Loading profile…</p>
+      </div>
+    );
+  }
+
+  if (error || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-xl font-bold">Profile</h1>
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-3 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-lg text-sm font-semibold"
+          >
+            Back
+          </button>
+        </div>
+        <p className="text-red-300">{error ?? 'User not found.'}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6 relative overflow-hidden">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
+        <div
+          className="h-full w-full"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.1) 49px, rgba(255,255,255,0.1) 50px)',
+          }}
+        />
+      </div>
+
+      <div className="relative z-10 flex flex-col max-w-md mx-auto w-full">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl font-black text-white">Profile</h1>
+          <button
+            type="button"
+            onClick={onBack}
+            className="px-3 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-lg text-sm font-semibold"
+          >
+            Back
+          </button>
+        </div>
+
+        {/* Avatar + username */}
+        <div className="flex flex-col items-center mb-6">
+          {editing ? (
+            <>
+              <div className="w-24 h-24 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center mb-3 overflow-hidden">
+                {editAvatarUrl ? (
+                  <img src={editAvatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl text-white/60">?</span>
+                )}
+              </div>
+              <input
+                type="url"
+                placeholder="Profile picture URL"
+                value={editAvatarUrl}
+                onChange={(e) => setEditAvatarUrl(e.target.value)}
+                className="w-full max-w-xs px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-2"
+              />
+              <input
+                type="text"
+                placeholder="Username"
+                value={editUsername}
+                onChange={(e) => setEditUsername(e.target.value)}
+                className="w-full max-w-xs px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-3"
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={actionBusy}
+                  className="px-4 py-2 bg-white text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditing(false)}
+                  className="px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="w-24 h-24 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center mb-3 overflow-hidden">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-4xl text-white/60">?</span>
+                )}
+              </div>
+              <h2 className="text-xl font-bold text-white truncate max-w-full">
+                {profile.username || 'Anonymous'}
+              </h2>
+              {isOwnProfile && (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="mt-2 text-sm text-white/80 hover:text-white underline"
+                >
+                  Edit profile
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Friend actions (other user only) */}
+        {!isOwnProfile && (
+          <div className="mb-6 flex flex-wrap gap-2 justify-center">
+            {friendship === null && (
+              <button
+                type="button"
+                onClick={handleSendRequest}
+                disabled={actionBusy}
+                className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
+              >
+                Add Friend
+              </button>
+            )}
+            {friendship === 'pending_sent' && (
+              <span className="px-4 py-2 bg-white/20 rounded-lg text-sm">Request sent</span>
+            )}
+            {friendship === 'pending_received' && (
+              <button
+                type="button"
+                onClick={handleAccept}
+                disabled={actionBusy}
+                className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
+              >
+                Accept request
+              </button>
+            )}
+            {friendship === 'friends' && (
+              <span className="px-4 py-2 bg-yellow-400/30 text-yellow-200 rounded-lg text-sm font-semibold">
+                Friends
+              </span>
+            )}
+          </div>
+        )}
+
+        {actionError && (
+          <p className="text-red-300 text-sm text-center mb-4">{actionError}</p>
+        )}
+
+        {/* Stats */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4 space-y-3">
+          <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide">Stats</h3>
+          <div className="grid grid-cols-1 gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-white/70">Consecutive days played</span>
+              <span className="font-bold text-white">{profile.consecutive_days_played}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/70">Career %</span>
+              <span className="font-bold text-white">{Math.round(profile.career_pct)}%</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/70">Best perfect streak</span>
+              <span className="font-bold text-white">{profile.best_perfect_streak}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/70">Total correct</span>
+              <span className="font-bold text-white">
+                {profile.total_correct} / {profile.total_questions}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

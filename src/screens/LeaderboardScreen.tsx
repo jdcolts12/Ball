@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getDailyLeaderboard, getMonthlyLeaderboard, getAllTimeLeaderboard, type LeaderboardRow } from '../services/leaderboard';
+import { getMyFriendIds } from '../services/friends';
 import type { BadgeId } from '../lib/badges';
 
 const BADGE_EMOJIS: Record<BadgeId, string> = {
@@ -21,7 +22,9 @@ const BADGE_LABELS: Record<BadgeId, string> = {
 type Tab = 'daily' | 'monthly' | 'alltime';
 
 interface LeaderboardScreenProps {
+  currentUserId: string;
   onBack: () => void;
+  onOpenProfile: (userId: string) => void;
 }
 
 /** Daily: request enough rows to show everyone who played today. Monthly/Career: smaller limit. */
@@ -34,11 +37,13 @@ function fetchLeaderboard(tab: Tab): Promise<{ rows: LeaderboardRow[]; error: Er
   return fn(limit);
 }
 
-export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
+export function LeaderboardScreen({ currentUserId, onBack, onOpenProfile }: LeaderboardScreenProps) {
   const [tab, setTab] = useState<Tab>('daily');
   const [rows, setRows] = useState<LeaderboardRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
+  const [friendsOnly, setFriendsOnly] = useState(false);
 
   const load = useCallback(() => {
     setLoading(true);
@@ -54,10 +59,20 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
     load();
   }, [load]);
 
+  useEffect(() => {
+    getMyFriendIds().then(({ friendIds: ids }) => {
+      setFriendIds(new Set(ids));
+    });
+  }, []);
+
   // No auto-refresh on window focus so the daily leaderboard doesn't "randomly" refresh when switching tabs
 
   const label = tab === 'daily' ? 'Daily' : tab === 'monthly' ? 'Monthly' : 'Career';
   const scoreLabel = tab === 'alltime' ? 'Total correct' : 'Points';
+
+  const displayRows = friendsOnly
+    ? rows.filter((r) => r.userId && friendIds.has(r.userId))
+    : rows;
 
   return (
     <div className="h-screen max-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-3 sm:p-4 relative overflow-hidden">
@@ -110,9 +125,22 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
         {error && (
           <p className="flex-shrink-0 text-red-300 text-xs sm:text-sm p-2 rounded border border-red-500/50 bg-red-900/30">{error}</p>
         )}
-        {!loading && !error && rows.length > 0 && (
+        {/* Friends-only filter */}
+        <div className="flex-shrink-0 flex items-center gap-2">
+          <label className="flex items-center gap-1.5 text-white/80 text-xs cursor-pointer">
+            <input
+              type="checkbox"
+              checked={friendsOnly}
+              onChange={(e) => setFriendsOnly(e.target.checked)}
+              className="rounded border-white/50 bg-white/10"
+            />
+            Friends only
+          </label>
+        </div>
+        {!loading && !error && displayRows.length > 0 && (
           <p className="flex-shrink-0 text-white/60 text-xs">
-            Showing {rows.length} {rows.length === 1 ? 'player' : 'players'}
+            Showing {displayRows.length} {displayRows.length === 1 ? 'player' : 'players'}
+            {friendsOnly && rows.length > 0 && ` (${rows.length} total)`}
           </p>
         )}
 
@@ -131,18 +159,33 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.length === 0 ? (
+                  {displayRows.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="py-8 text-white/70 text-center text-sm">
-                        No scores yet for {label.toLowerCase()}.
+                        {friendsOnly ? 'No friends on this leaderboard.' : `No scores yet for ${label.toLowerCase()}.`}
                       </td>
                     </tr>
                   ) : (
-                    rows.map((r) => (
-                      <tr key={`${r.rank}-${r.username}-${r.score}`} className="border-b border-white/10">
+                    displayRows.map((r) => {
+                      const isFriend = r.userId ? friendIds.has(r.userId) : false;
+                      const canOpenProfile = !!r.userId;
+                      return (
+                      <tr key={`${r.rank}-${r.userId ?? r.username}-${r.score}`} className="border-b border-white/10">
                         <td className="py-1.5 pr-2 sm:py-2 sm:pr-3 font-black text-yellow-400 align-middle">{r.rank}</td>
-                        <td className="py-1.5 pr-3 sm:py-2 sm:pr-4 text-white font-semibold align-middle" title={r.username}>
-                          <span className="block truncate max-w-[200px] sm:max-w-none">{r.username}</span>
+                        <td className="py-1.5 pr-3 sm:py-2 sm:pr-4 font-semibold align-middle" title={r.username}>
+                          {canOpenProfile ? (
+                            <button
+                              type="button"
+                              onClick={() => onOpenProfile(r.userId!)}
+                              className={`block truncate max-w-[200px] sm:max-w-none text-left w-full hover:underline cursor-pointer ${isFriend ? 'text-yellow-300' : 'text-white'}`}
+                            >
+                              {r.username}
+                            </button>
+                          ) : (
+                            <span className={`block truncate max-w-[200px] sm:max-w-none ${isFriend ? 'text-yellow-300' : 'text-white'}`}>
+                              {r.username}
+                            </span>
+                          )}
                         </td>
                         <td className="py-1.5 pr-2 sm:py-2 sm:pr-2 text-white align-middle text-right">{r.score}</td>
                         <td className="py-1.5 pr-2 sm:py-2 sm:pr-3 text-white font-medium align-middle text-right">{r.pctCorrect}%</td>
@@ -165,7 +208,8 @@ export function LeaderboardScreen({ onBack }: LeaderboardScreenProps) {
                           )}
                         </td>
                       </tr>
-                    ))
+                    );
+                    })
                   )}
                 </tbody>
               </table>

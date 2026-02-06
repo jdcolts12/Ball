@@ -8,9 +8,10 @@ import { HomeScreen } from './screens/HomeScreen';
 import { GameScreen } from './screens/GameScreen';
 import { ResultsScreen } from './screens/ResultsScreen';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
+import { ProfileScreen } from './screens/ProfileScreen';
 import type { GameResultBreakdown } from './screens/GameScreen';
 
-type Screen = 'home' | 'game' | 'results' | 'leaderboard';
+type Screen = 'home' | 'game' | 'results' | 'leaderboard' | 'profile';
 
 const loadingStyle = { minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, sans-serif', fontWeight: 'bold' };
 
@@ -18,6 +19,7 @@ function App() {
   const { user, initializing, signOut } = useAuth();
   const { canPlay, recordPlay, refreshCanPlay, checking } = useDailyPlayLimit();
   const [screen, setScreen] = useState<Screen>('home');
+  const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [results, setResults] = useState<{ score: number; correct: number; total: number; breakdown: GameResultBreakdown } | null>(null);
   const [startingGame, setStartingGame] = useState(false);
 
@@ -32,11 +34,27 @@ function App() {
     );
   }
 
+  if (screen === 'profile' && profileUserId && user) {
+    return (
+      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
+        <ProfileScreen
+          userId={profileUserId}
+          currentUserId={user.id}
+          onBack={() => { setProfileUserId(null); setScreen('leaderboard'); }}
+        />
+      </div>
+    );
+  }
+
   // Show leaderboard regardless of canPlay status
   if (screen === 'leaderboard') {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
-        <LeaderboardScreen onBack={() => setScreen('home')} />
+        <LeaderboardScreen
+          currentUserId={user.id}
+          onBack={() => setScreen('home')}
+          onOpenProfile={(uid) => { setProfileUserId(uid); setScreen('profile'); }}
+        />
       </div>
     );
   }
