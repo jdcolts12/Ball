@@ -18,7 +18,7 @@ interface ResultsScreenProps {
 export function ResultsScreen({ score, correct, total, breakdown, currentUserId, onLeaderboard, onHome, onOpenProfile }: ResultsScreenProps) {
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
-  const [gameStreak, setGameStreak] = useState<number | null>(null);
+  const [gameStreak, setGameStreak] = useState<number>(0);
 
   useEffect(() => {
     async function calculateBadges() {
@@ -43,9 +43,17 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
     }
     
     async function fetchGameStreak() {
-      const { profile, error } = await getUserPublicProfile(currentUserId);
-      if (!error && profile) {
-        setGameStreak(profile.consecutive_days_played);
+      try {
+        const { profile, error } = await getUserPublicProfile(currentUserId);
+        if (!error && profile) {
+          setGameStreak(profile.consecutive_days_played ?? 0);
+        } else {
+          // Default to 0 if fetch fails
+          setGameStreak(0);
+        }
+      } catch (err) {
+        // Default to 0 on error
+        setGameStreak(0);
       }
     }
     
@@ -72,17 +80,15 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
         <p className="text-3xl font-black text-white">
           {correct} / {total} correct
         </p>
-        {gameStreak !== null && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border-2 border-white/20">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <span className="text-2xl">🔥</span>
-              <p className="text-white/80 text-sm uppercase tracking-wide">Game Streak</p>
-            </div>
-            <p className="text-3xl font-black text-white">
-              {gameStreak} {gameStreak === 1 ? 'day' : 'days'}
-            </p>
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border-2 border-white/20">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <span className="text-2xl">🔥</span>
+            <p className="text-white/80 text-sm uppercase tracking-wide">Game Streak</p>
           </div>
-        )}
+          <p className="text-3xl font-black text-white">
+            {gameStreak} {gameStreak === 1 ? 'day' : 'days'}
+          </p>
+        </div>
         {!loading && earnedBadges.length > 0 && (
           <div className="space-y-3 bg-white/10 backdrop-blur-sm rounded-xl p-6 border-2 border-white/20">
             <p className="text-white font-semibold text-sm uppercase tracking-wide">Badges Earned</p>
