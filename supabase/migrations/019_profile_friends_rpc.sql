@@ -46,13 +46,13 @@ as $$
     order by min(played_date) desc
     limit 1
   ),
-  -- Best perfect streak: days with 4/4 game, consecutive
+  -- Best perfect streak: days with perfect game (3/3 or 4/4), consecutive
   perfect_days as (
     select distinct (g.created_at at time zone 'America/Los_Angeles')::date as d
     from public.games g
     where g.user_id = target_user_id
       and g.correct_answers = g.questions_answered
-      and g.questions_answered >= 4
+      and g.questions_answered >= 3
   ),
   streak_grp as (
     select d, d + row_number() over (order by d desc)::int as grp

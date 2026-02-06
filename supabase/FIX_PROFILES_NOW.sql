@@ -100,7 +100,7 @@ as $$
     from public.games g
     where g.user_id = target_user_id
       and g.correct_answers = g.questions_answered
-      and g.questions_answered >= 4
+      and g.questions_answered >= 3
   ),
   streak_grp as (
     select d, d + row_number() over (order by d desc)::int as grp

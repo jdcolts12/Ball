@@ -37,7 +37,7 @@ as $$
   ),
   dated_grp as (
     select played_date,
-      played_date - row_number() over (order by played_date desc)::int as grp
+      played_date + row_number() over (order by played_date desc)::int as grp
     from game_dates
   ),
   consecutive as (
@@ -52,10 +52,10 @@ as $$
     from public.games g
     where g.user_id = target_user_id
       and g.correct_answers = g.questions_answered
-      and g.questions_answered >= 4
+      and g.questions_answered >= 3
   ),
   streak_grp as (
-    select d, d - row_number() over (order by d desc)::int as grp
+    select d, d + row_number() over (order by d desc)::int as grp
     from perfect_days
   ),
   streak_calc as (
