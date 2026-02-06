@@ -3,9 +3,26 @@ import { getUserPublicProfile, updateMyProfile, uploadAvatar } from '../services
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '../services/friends';
 import { updateUsername } from '../services/auth';
 import { getCareerPercentageBadges, getStreakBadge } from '../lib/badges';
-import type { UserPublicProfile } from '../types/database';
+import type { UserPublicProfile, ProfileBgColor } from '../types/database';
 import type { FriendshipStatus } from '../types/database';
 import type { BadgeId } from '../lib/badges';
+
+const PROFILE_BG_COLORS: ProfileBgColor[] = ['blue', 'green', 'yellow', 'red', 'black', 'purple', 'orange', 'pink'];
+
+const PROFILE_BG_CLASSES: Record<string, string> = {
+  blue: 'from-blue-900 via-blue-800 to-blue-900',
+  green: 'from-green-900 via-green-800 to-green-900',
+  yellow: 'from-amber-800 via-amber-700 to-amber-800',
+  red: 'from-red-900 via-red-800 to-red-900',
+  black: 'from-gray-900 via-gray-800 to-gray-900',
+  purple: 'from-purple-900 via-purple-800 to-purple-900',
+  orange: 'from-orange-900 via-orange-800 to-orange-900',
+  pink: 'from-pink-900 via-pink-800 to-pink-900',
+};
+
+function getProfileBgClass(color: string | null | undefined): string {
+  return PROFILE_BG_CLASSES[color ?? 'green'] ?? PROFILE_BG_CLASSES.green;
+}
 
 interface ProfileScreenProps {
   userId: string;
@@ -23,6 +40,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
   const [editing, setEditing] = useState(false);
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editUsername, setEditUsername] = useState('');
+  const [editProfileBgColor, setEditProfileBgColor] = useState<string>('green');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [photoUpdated, setPhotoUpdated] = useState(false);
 
@@ -43,6 +61,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
       if (profileRes.profile) {
         setEditAvatarUrl(profileRes.profile.avatar_url ?? '');
         setEditUsername(profileRes.profile.username ?? '');
+        setEditProfileBgColor(profileRes.profile.profile_bg_color ?? 'green');
       }
     }
     if (!isOwnProfile && statusRes.error) {
@@ -112,6 +131,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
     }
     const avatarRes = await updateMyProfile({
       avatar_url: editAvatarUrl.trim() || null,
+      profile_bg_color: editProfileBgColor || 'green',
     });
     if (avatarRes.error) {
       setActionError(avatarRes.error.message);
@@ -123,16 +143,24 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
               ...p,
               username: editUsername.trim() || null,
               avatar_url: editAvatarUrl.trim() || null,
+              profile_bg_color: editProfileBgColor || 'green',
             }
           : null
       );
+      // Refetch from DB so profile_bg_color persists and is in sync
+      getUserPublicProfile(userId).then((res) => {
+        if (res.profile) setProfile(res.profile);
+      });
     }
     setActionBusy(false);
   };
 
+  const effectiveBg = editing ? editProfileBgColor : (profile?.profile_bg_color ?? 'green');
+  const bgClass = getProfileBgClass(profile ? effectiveBg : 'green');
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col items-center justify-center p-6">
+      <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col items-center justify-center p-6`}>
         <p className="text-white/80">Loading profile…</p>
       </div>
     );
@@ -145,7 +173,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
         error.includes('permission denied') ||
         error.includes('relation'));
     return (
-      <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6">
+      <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col p-6`}>
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-xl font-bold">Profile</h1>
           <button
@@ -167,7 +195,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6 relative overflow-hidden">
+    <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col p-6 relative overflow-hidden`}>
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div
           className="h-full w-full"
@@ -226,6 +254,33 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
                 onChange={(e) => setEditUsername(e.target.value)}
                 className="w-full max-w-xs px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-3"
               />
+              <p className="text-sm text-white/80 mb-1">Background color</p>
+              <div className="flex flex-wrap gap-2 justify-center mb-3">
+                {PROFILE_BG_COLORS.map((c) => {
+                  const hex: Record<string, string> = {
+                    blue: '#1e3a8a',
+                    green: '#14532d',
+                    yellow: '#92400e',
+                    red: '#7f1d1d',
+                    black: '#1f2937',
+                    purple: '#581c87',
+                    orange: '#7c2d12',
+                    pink: '#831843',
+                  };
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      title={c}
+                      onClick={() => setEditProfileBgColor(c)}
+                      className={`w-8 h-8 rounded-full border-2 shrink-0 ${
+                        editProfileBgColor === c ? 'border-white ring-2 ring-white/50' : 'border-white/40 hover:border-white/60'
+                      }`}
+                      style={{ backgroundColor: hex[c] ?? '#14532d' }}
+                    />
+                  );
+                })}
+              </div>
               <div className="flex gap-2">
                 <button
                   type="button"
@@ -334,26 +389,28 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
         )}
 
         {/* Stats */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4 space-y-3">
-          <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide">Stats</h3>
-          <div className="grid grid-cols-1 gap-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-white/70">Games played</span>
-              <span className="font-bold text-white">{profile.total_games}</span>
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-5 sm:p-6">
+          <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-4">Stats</h3>
+          <div className="grid grid-cols-1 gap-1 text-base">
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
+              <span className="text-white/80">Games played</span>
+              <span className="font-bold text-white tabular-nums">{profile.total_games}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/70" title="Consecutive days played in a row (resets if you miss a day). Uses Pacific time.">
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
+              <span className="text-white/80" title="Consecutive days played in a row (resets if you miss a day). Uses Pacific time.">
                 Game streak
               </span>
-              <span className="font-bold text-white">{profile.consecutive_days_played}</span>
+              <span className="font-bold text-white tabular-nums">{profile.consecutive_days_played}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/70">Career %</span>
-              <span className="font-bold text-white">{Math.round(profile.career_pct)}%</span>
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
+              <span className="text-white/80">Career %</span>
+              <span className="font-bold text-white tabular-nums">{Math.round(profile.career_pct)}%</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/70">Best perfect streak</span>
-              <span className="font-bold text-white">{profile.best_perfect_streak}</span>
+            <div className="flex justify-between items-center py-2.5 gap-4">
+              <span className="text-white/80 shrink-0" title="Best consecutive days with a perfect game (100% in one round).">
+                Perfect streak
+              </span>
+              <span className="font-bold text-white tabular-nums">{profile.best_perfect_streak}</span>
             </div>
           </div>
         </div>
@@ -378,20 +435,42 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
             career80: '80%',
             career90: '90%',
           };
+          const BADGE_DESC: Record<BadgeId, string> = {
+            perfect: 'Perfect game',
+            streak: 'Perfect streak',
+            career70: 'Solid accuracy',
+            career80: 'Great accuracy',
+            career90: 'Top accuracy',
+          };
+          const BADGE_WHY: Record<BadgeId, string> = {
+            perfect: '100% in one game',
+            streak: '2+ perfect days in a row',
+            career70: '70%+ career correct',
+            career80: '80%+ career correct',
+            career90: '90%+ career correct',
+          };
           return (
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4">
-              <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-2">Badges</h3>
-              <div className="flex flex-wrap gap-2">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-5 sm:p-6">
+              <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-3">Badges</h3>
+              <div className="flex flex-wrap gap-3">
                 {badges.map((b) => (
-                  <span
+                  <div
                     key={b.id}
-                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white/20 text-white border border-white/30 text-xs font-bold"
-                    title={b.label}
+                    className="inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl bg-white/20 border border-white/30 min-w-[5.5rem]"
+                    title={`${BADGE_DESC[b.id as BadgeId] ?? b.label}: ${BADGE_WHY[b.id as BadgeId] ?? ''}`}
                   >
-                    <span>{BADGE_EMOJIS[b.id as BadgeId] ?? '🏅'}</span>
-                    {b.id === 'streak' && b.streakCount != null && <span>x{b.streakCount}</span>}
-                    <span>{BADGE_LABELS[b.id as BadgeId] ?? b.label}</span>
-                  </span>
+                    <span className="flex items-center gap-1 text-white font-bold text-sm">
+                      <span>{BADGE_EMOJIS[b.id as BadgeId] ?? '🏅'}</span>
+                      {b.id === 'streak' && b.streakCount != null && <span>x{b.streakCount}</span>}
+                      <span>{BADGE_LABELS[b.id as BadgeId] ?? b.label}</span>
+                    </span>
+                    <span className="text-[10px] text-white/70 leading-tight text-center">
+                      {BADGE_DESC[b.id as BadgeId] ?? ''}
+                    </span>
+                    <span className="text-[10px] text-white/50 leading-tight text-center border-t border-white/20 pt-1 mt-0.5">
+                      {BADGE_WHY[b.id as BadgeId] ?? ''}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>

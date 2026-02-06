@@ -11,17 +11,20 @@ export interface Profile {
   updated_at: string;
 }
 
+/** Profile background color options */
+export type ProfileBgColor = 'blue' | 'green' | 'yellow' | 'red' | 'black' | 'purple' | 'orange' | 'pink';
+
 /** Public profile + stats returned by get_user_public_profile */
 export interface UserPublicProfile {
   user_id: string;
   username: string | null;
   avatar_url: string | null;
+  /** Profile page background: blue, green, yellow, red, black, purple, orange, pink */
+  profile_bg_color: ProfileBgColor | string | null;
   career_pct: number;
   total_correct: number;
   total_questions: number;
-  /** Total games completed (for "Games played" display) */
   total_games: number;
-  /** Consecutive days played (displayed as "Game streak") */
   consecutive_days_played: number;
   best_perfect_streak: number;
 }

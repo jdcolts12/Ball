@@ -11,11 +11,13 @@ export async function getUserPublicProfile(userId: string): Promise<{
   if (!error) {
     const row = Array.isArray(data) ? data[0] : data;
     if (!row) return { profile: null, error: null };
+    const bg = row.profile_bg_color as string | null;
     return {
       profile: {
         user_id: row.user_id,
         username: row.username ?? null,
         avatar_url: row.avatar_url ?? null,
+        profile_bg_color: bg ?? 'green',
         career_pct: Number(row.career_pct ?? 0),
         total_correct: Number(row.total_correct ?? 0),
         total_questions: Number(row.total_questions ?? 0),
@@ -44,6 +46,7 @@ export async function getUserPublicProfile(userId: string): Promise<{
           user_id: row.id,
           username: row.username ?? null,
           avatar_url: row.avatar_url ?? null,
+          profile_bg_color: (row as { profile_bg_color?: string }).profile_bg_color ?? 'green',
           career_pct: 0,
           total_correct: 0,
           total_questions: 0,
@@ -61,12 +64,14 @@ export async function getUserPublicProfile(userId: string): Promise<{
 export async function updateMyProfile(updates: {
   username?: string;
   avatar_url?: string | null;
+  profile_bg_color?: string | null;
 }): Promise<{ error: Error | null }> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { error: new Error('Not authenticated') };
   const payload: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (updates.username !== undefined) payload.username = updates.username;
   if (updates.avatar_url !== undefined) payload.avatar_url = updates.avatar_url;
+  if (updates.profile_bg_color !== undefined) payload.profile_bg_color = updates.profile_bg_color;
   const { error } = await supabase
     .from('profiles')
     .update(payload)

@@ -36,7 +36,7 @@ as $$
   ),
   dated_grp as (
     select played_date,
-      played_date - row_number() over (order by played_date desc)::int as grp
+      played_date + row_number() over (order by played_date desc)::int as grp
     from game_dates
   ),
   consecutive as (
@@ -55,7 +55,7 @@ as $$
       and g.questions_answered >= 4
   ),
   streak_grp as (
-    select d, d - row_number() over (order by d desc)::int as grp
+    select d, d + row_number() over (order by d desc)::int as grp
     from perfect_days
   ),
   streak_calc as (
@@ -151,9 +151,9 @@ begin
   if auth.uid() is null then
     return jsonb_build_object('ok', false, 'error', 'not_authenticated');
   end if;
-  update public.friend_requests
+  update public.friend_requests fr
   set status = 'accepted', updated_at = now()
-  where to_user_id = auth.uid() and from_user_id = accept_friend_request.from_user_id and status = 'pending';
+  where fr.to_user_id = auth.uid() and fr.from_user_id = accept_friend_request.from_user_id and fr.status = 'pending';
   if not found then
     return jsonb_build_object('ok', false, 'error', 'request_not_found');
   end if;
