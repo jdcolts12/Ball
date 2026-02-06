@@ -77,7 +77,7 @@ export function ResultsScreen({ score, correct, total, breakdown, onLeaderboard,
           </div>
         )}
         <p className="text-white text-lg font-semibold">
-          Come back tomorrow for 3 more questions
+          Come back tomorrow for 4 more questions
         </p>
         <div className="flex flex-col gap-3 pt-4">
           <button

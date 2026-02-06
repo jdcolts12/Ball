@@ -85,7 +85,7 @@ export function AuthScreen({ onSuccess }: AuthScreenProps) {
           <div className="h-1 w-24 bg-white mx-auto mb-4 rounded-full"></div>
           <p className="text-white text-lg font-semibold mt-4 leading-relaxed">
             {configured
-              ? 'Daily NFL trivia. 3 questions, one round per day. Test Your Ball Knowledge'
+              ? 'Daily NFL trivia. 4 questions, one round per day. Test Your Ball Knowledge'
               : 'To create an account, add your Supabase URL and anon key to the .env file. See SETUP.md.'}
           </p>
         </div>

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getUserPublicProfile, updateMyProfile } from '../services/profile';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { getUserPublicProfile, updateMyProfile, uploadAvatar } from '../services/profile';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '../services/friends';
 import { updateUsername } from '../services/auth';
 import type { UserPublicProfile } from '../types/database';
@@ -21,6 +21,8 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
   const [editing, setEditing] = useState(false);
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editUsername, setEditUsername] = useState('');
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isOwnProfile = userId === currentUserId;
 
@@ -77,6 +79,22 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
     setActionBusy(false);
   };
 
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !isOwnProfile) return;
+    e.target.value = '';
+    setUploadingAvatar(true);
+    setActionError(null);
+    const { url, error: uploadError } = await uploadAvatar(file);
+    if (uploadError) {
+      setActionError(uploadError.message);
+    } else if (url) {
+      setEditAvatarUrl(url);
+      setProfile((p) => (p ? { ...p, avatar_url: url } : null));
+    }
+    setUploadingAvatar(false);
+  };
+
   const handleSaveProfile = async () => {
     if (!isOwnProfile) return;
     setActionBusy(true);
@@ -116,6 +134,11 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
   }
 
   if (error || !profile) {
+    const isSetupError =
+      error &&
+      (error.includes('does not exist') ||
+        error.includes('permission denied') ||
+        error.includes('relation'));
     return (
       <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6">
         <div className="flex justify-between items-center mb-4">
@@ -128,7 +151,12 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
             Back
           </button>
         </div>
-        <p className="text-red-300">{error ?? 'User not found.'}</p>
+        <p className="text-red-300 mb-2">{error ?? 'User not found.'}</p>
+        {isSetupError && (
+          <p className="text-white/70 text-sm">
+            Run the SQL in <code className="bg-white/10 px-1 rounded">supabase/FIX_PROFILES_NOW.sql</code> in Supabase → SQL Editor to enable profiles.
+          </p>
+        )}
       </div>
     );
   }
@@ -169,8 +197,23 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
                 )}
               </div>
               <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp"
+                className="hidden"
+                onChange={handleAvatarFileChange}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="mb-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/40 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {uploadingAvatar ? 'Uploading…' : 'Choose from camera roll'}
+              </button>
+              <input
                 type="url"
-                placeholder="Profile picture URL"
+                placeholder="Or paste profile picture URL"
                 value={editAvatarUrl}
                 onChange={(e) => setEditAvatarUrl(e.target.value)}
                 className="w-full max-w-xs px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-2"
