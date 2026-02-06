@@ -1,20 +1,23 @@
 import { useState, useEffect } from 'react';
 import { useDailyPlayLimit } from '../hooks/useDailyPlayLimit';
 import { getTodaysGame } from '../services/games';
+import { getUserPublicProfile } from '../services/profile';
 import type { Game } from '../types/database';
 import { getDailyGameQuestions } from '../lib/dailyGameQuestions';
 import { getPickLabel } from '../lib/dailyDraftQuestion';
 import type { GameQuestion } from '../lib/dailyGameQuestions';
 
 interface DailyLimitScreenProps {
+  currentUserId: string;
   onLeaderboard: () => void;
 }
 
-export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
+export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScreenProps) {
   const { lastPlayed } = useDailyPlayLimit();
   const [todaysGame, setTodaysGame] = useState<Game | null>(null);
   const [questions, setQuestions] = useState<GameQuestion[]>([]);
   const [loading, setLoading] = useState(true);
+  const [gameStreak, setGameStreak] = useState<number>(0);
   // Format YYYY-MM-DD to MM/DD/YYYY
   const formatDate = (dateStr: string): string => {
     const [year, month, day] = dateStr.split('-');
@@ -54,8 +57,21 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
       setQuestions(todaysQuestions);
       setLoading(false);
     }
+    
+    async function fetchGameStreak() {
+      try {
+        const { profile, error } = await getUserPublicProfile(currentUserId);
+        if (!error && profile) {
+          setGameStreak(profile.consecutive_days_played ?? 0);
+        }
+      } catch (err) {
+        setGameStreak(0);
+      }
+    }
+    
     fetchTodaysGame();
-  }, []);
+    fetchGameStreak();
+  }, [currentUserId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col p-6 relative overflow-y-auto">
@@ -225,9 +241,17 @@ export function DailyLimitScreen({ onLeaderboard }: DailyLimitScreenProps) {
 
         {/* Last played & Next game - always visible on this screen */}
         <div className="w-full max-w-sm mx-auto rounded-xl bg-white/15 backdrop-blur-sm border-2 border-white/25 p-4 space-y-3">
-          <p className="text-sm text-white/90 font-semibold">
-            Last played: {lastPlayed ? formatDate(lastPlayed) : todaysGame ? 'Today' : '—'}
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-white/90 font-semibold">
+              Last played: {lastPlayed ? formatDate(lastPlayed) : todaysGame ? 'Today' : '—'}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg">🔥</span>
+              <p className="text-sm text-white/90 font-semibold">
+                {gameStreak} {gameStreak === 1 ? 'day' : 'days'}
+              </p>
+            </div>
+          </div>
           <p className="text-sm text-white/90 font-semibold">
             Next game in: <span className="font-mono font-bold text-amber-300 text-lg">{timeUntilNext}</span>
           </p>

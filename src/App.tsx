@@ -66,7 +66,7 @@ function App() {
         {checking ? (
           <div style={loadingStyle}>Checking…</div>
         ) : (
-          <DailyLimitScreen onLeaderboard={() => setScreen('leaderboard')} />
+          <DailyLimitScreen currentUserId={user.id} onLeaderboard={() => setScreen('leaderboard')} />
         )}
       </div>
     );
