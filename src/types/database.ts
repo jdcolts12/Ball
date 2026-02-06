@@ -19,6 +19,9 @@ export interface UserPublicProfile {
   career_pct: number;
   total_correct: number;
   total_questions: number;
+  /** Total games completed (for "Games played" display) */
+  total_games: number;
+  /** Consecutive days played (displayed as "Game streak") */
   consecutive_days_played: number;
   best_perfect_streak: number;
 }

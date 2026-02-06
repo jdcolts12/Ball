@@ -2,8 +2,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { getUserPublicProfile, updateMyProfile, uploadAvatar } from '../services/profile';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '../services/friends';
 import { updateUsername } from '../services/auth';
+import { getCareerPercentageBadges, getStreakBadge } from '../lib/badges';
 import type { UserPublicProfile } from '../types/database';
 import type { FriendshipStatus } from '../types/database';
+import type { BadgeId } from '../lib/badges';
 
 interface ProfileScreenProps {
   userId: string;
@@ -336,7 +338,11 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
           <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide">Stats</h3>
           <div className="grid grid-cols-1 gap-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-white/70">Consecutive days played</span>
+              <span className="text-white/70">Games played</span>
+              <span className="font-bold text-white">{profile.total_games}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-white/70">Game streak</span>
               <span className="font-bold text-white">{profile.consecutive_days_played}</span>
             </div>
             <div className="flex justify-between">
@@ -347,14 +353,48 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
               <span className="text-white/70">Best perfect streak</span>
               <span className="font-bold text-white">{profile.best_perfect_streak}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-white/70">Total correct</span>
-              <span className="font-bold text-white">
-                {profile.total_correct} / {profile.total_questions}
-              </span>
-            </div>
           </div>
         </div>
+
+        {/* Badges */}
+        {(() => {
+          const careerBadges = getCareerPercentageBadges(profile.total_correct, profile.total_questions);
+          const streakBadge = getStreakBadge(profile.best_perfect_streak);
+          const badges = [...careerBadges, ...(streakBadge ? [streakBadge] : [])];
+          if (badges.length === 0) return null;
+          const BADGE_EMOJIS: Record<BadgeId, string> = {
+            perfect: '🏆',
+            streak: '🔥',
+            career75: '🏅',
+            career85: '⭐',
+            career95: '💎',
+          };
+          const BADGE_LABELS: Record<BadgeId, string> = {
+            perfect: 'Perfect',
+            streak: 'Streak',
+            career75: '75%',
+            career85: '85%',
+            career95: '95%',
+          };
+          return (
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4">
+              <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-2">Badges</h3>
+              <div className="flex flex-wrap gap-2">
+                {badges.map((b) => (
+                  <span
+                    key={b.id}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded bg-white/20 text-white border border-white/30 text-xs font-bold"
+                    title={b.label}
+                  >
+                    <span>{BADGE_EMOJIS[b.id as BadgeId] ?? '🏅'}</span>
+                    {b.id === 'streak' && b.streakCount != null && <span>x{b.streakCount}</span>}
+                    <span>{BADGE_LABELS[b.id as BadgeId] ?? b.label}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
       </div>
     </div>
   );

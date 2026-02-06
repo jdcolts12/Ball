@@ -8,6 +8,7 @@ returns table (
   career_pct numeric,
   total_correct bigint,
   total_questions bigint,
+  total_games bigint,
   consecutive_days_played bigint,
   best_perfect_streak bigint
 )
@@ -22,7 +23,7 @@ as $$
     where p.id = target_user_id
   ),
   stats_row as (
-    select s.total_correct, s.total_questions,
+    select s.total_correct, s.total_questions, s.total_games,
       (s.total_correct::numeric / nullif(s.total_questions, 0) * 100) as career_pct
     from public.stats s
     where s.user_id = target_user_id
@@ -71,6 +72,7 @@ as $$
     coalesce(round(sr.career_pct, 0), 0)::numeric as career_pct,
     coalesce(sr.total_correct, 0)::bigint as total_correct,
     coalesce(sr.total_questions, 0)::bigint as total_questions,
+    coalesce(sr.total_games, 0)::bigint as total_games,
     coalesce(c.days, 0)::bigint as consecutive_days_played,
     coalesce(sc.streak, 0)::bigint as best_perfect_streak
   from profile_row pr
@@ -112,12 +114,12 @@ begin
   if from_id is null then
     return jsonb_build_object('ok', false, 'error', 'not_authenticated');
   end if;
-  if to_user_id = from_id then
+  if send_friend_request.to_user_id = from_id then
     return jsonb_build_object('ok', false, 'error', 'cannot_friend_self');
   end if;
-  select * into existing from public.friend_requests
-  where (from_user_id = from_id and to_user_id = send_friend_request.to_user_id)
-     or (from_user_id = send_friend_request.to_user_id and to_user_id = from_id);
+  select fr.* into existing from public.friend_requests fr
+  where (fr.from_user_id = from_id and fr.to_user_id = send_friend_request.to_user_id)
+     or (fr.from_user_id = send_friend_request.to_user_id and fr.to_user_id = from_id);
   if existing.id is not null then
     if existing.status = 'accepted' then
       return jsonb_build_object('ok', false, 'error', 'already_friends');
@@ -131,7 +133,7 @@ begin
     return jsonb_build_object('ok', false, 'error', 'request_pending');
   end if;
   insert into public.friend_requests (from_user_id, to_user_id, status)
-  values (from_id, to_user_id, 'pending');
+  values (from_id, send_friend_request.to_user_id, 'pending');
   return jsonb_build_object('ok', true);
 end;
 $$;
