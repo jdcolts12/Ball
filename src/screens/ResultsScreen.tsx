@@ -42,18 +42,32 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
       setLoading(false);
     }
     
-    async function fetchGameStreak() {
+    async function fetchGameStreak(retryCount = 0) {
       try {
+        // Wait to ensure game is saved and stats are updated (longer wait on first try)
+        await new Promise(resolve => setTimeout(resolve, retryCount === 0 ? 1500 : 500));
         const { profile, error } = await getUserPublicProfile(currentUserId);
         if (!error && profile) {
-          setGameStreak(profile.consecutive_days_played ?? 0);
+          const streak = profile.consecutive_days_played ?? 0;
+          setGameStreak(streak);
+          // If streak is still 0 and we haven't retried, try once more
+          if (streak === 0 && retryCount === 0) {
+            setTimeout(() => fetchGameStreak(1), 1000);
+          }
         } else {
-          // Default to 0 if fetch fails
-          setGameStreak(0);
+          // Retry once if fetch failed
+          if (retryCount === 0) {
+            setTimeout(() => fetchGameStreak(1), 1000);
+          } else {
+            setGameStreak(0);
+          }
         }
       } catch (err) {
-        // Default to 0 on error
-        setGameStreak(0);
+        if (retryCount === 0) {
+          setTimeout(() => fetchGameStreak(1), 1000);
+        } else {
+          setGameStreak(0);
+        }
       }
     }
     
