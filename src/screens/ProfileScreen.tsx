@@ -269,39 +269,53 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
 
         {/* Friend actions (other user only) */}
         {!isOwnProfile && (
-          <div className="mb-6 flex flex-wrap gap-2 justify-center">
-            {friendship === null && (
-              <button
-                type="button"
-                onClick={handleSendRequest}
-                disabled={actionBusy}
-                className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
-              >
-                Add Friend
-              </button>
+          <div className="mb-4 flex flex-col items-center gap-2">
+            <div className="flex flex-wrap gap-2 justify-center">
+              {friendship === null && (
+                <button
+                  type="button"
+                  onClick={handleSendRequest}
+                  disabled={actionBusy}
+                  className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
+                >
+                  {actionBusy ? 'Sending…' : 'Add Friend'}
+                </button>
+              )}
+              {friendship === 'pending_sent' && (
+                <span className="px-4 py-2 bg-white/20 rounded-lg text-sm">Request sent</span>
+              )}
+              {friendship === 'pending_received' && (
+                <button
+                  type="button"
+                  onClick={handleAccept}
+                  disabled={actionBusy}
+                  className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
+                >
+                  {actionBusy ? 'Accepting…' : 'Accept request'}
+                </button>
+              )}
+              {friendship === 'friends' && (
+                <span className="px-4 py-2 bg-yellow-400/30 text-yellow-200 rounded-lg text-sm font-semibold">
+                  Friends
+                </span>
+              )}
+            </div>
+            {actionError && (
+              <p className="text-red-300 text-sm text-center max-w-xs">{actionError}</p>
             )}
-            {friendship === 'pending_sent' && (
-              <span className="px-4 py-2 bg-white/20 rounded-lg text-sm">Request sent</span>
-            )}
-            {friendship === 'pending_received' && (
-              <button
-                type="button"
-                onClick={handleAccept}
-                disabled={actionBusy}
-                className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
-              >
-                Accept request
-              </button>
-            )}
-            {friendship === 'friends' && (
-              <span className="px-4 py-2 bg-yellow-400/30 text-yellow-200 rounded-lg text-sm font-semibold">
-                Friends
-              </span>
+            {actionError && (
+              actionError.toLowerCase().includes('function') ||
+              actionError.toLowerCase().includes('permission') ||
+              actionError.toLowerCase().includes('does not exist')
+            ) && (
+              <p className="text-white/70 text-xs text-center max-w-xs">
+                Run <code className="bg-white/10 px-1 rounded">FIX_PROFILES_NOW.sql</code> in Supabase → SQL Editor to enable friends.
+              </p>
             )}
           </div>
         )}
 
-        {actionError && (
+        {isOwnProfile && actionError && (
           <p className="text-red-300 text-sm text-center mb-2">{actionError}</p>
         )}
         {actionError && (

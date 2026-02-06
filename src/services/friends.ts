@@ -17,11 +17,12 @@ export async function sendFriendRequest(toUserId: string): Promise<{
     to_user_id: toUserId,
   });
   if (error) return { ok: false, error: error.message };
-  const result = (data ?? {}) as { ok?: boolean; accepted?: boolean; error?: string };
+  const raw = Array.isArray(data) ? data[0] : data;
+  const result = (raw ?? {}) as { ok?: boolean; accepted?: boolean; error?: string };
   return {
     ok: result.ok === true,
-    accepted: result.accepted,
-    error: result.error,
+    accepted: result.accepted === true,
+    error: result.error ?? (result.ok !== true ? 'Request failed' : undefined),
   };
 }
 
@@ -33,8 +34,12 @@ export async function acceptFriendRequest(fromUserId: string): Promise<{
     from_user_id: fromUserId,
   });
   if (error) return { ok: false, error: error.message };
-  const result = (data ?? {}) as { ok?: boolean; error?: string };
-  return { ok: result.ok === true, error: result.error };
+  const raw = Array.isArray(data) ? data[0] : data;
+  const result = (raw ?? {}) as { ok?: boolean; error?: string };
+  return {
+    ok: result.ok === true,
+    error: result.error ?? (result.ok !== true ? 'Accept failed' : undefined),
+  };
 }
 
 export async function getFriendshipStatus(otherUserId: string): Promise<{
