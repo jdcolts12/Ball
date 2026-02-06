@@ -72,10 +72,15 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
         <p className="text-3xl font-black text-white">
           {correct} / {total} correct
         </p>
-        {gameStreak !== null && gameStreak > 0 && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20">
-            <p className="text-white/80 text-sm uppercase tracking-wide mb-1">Game Streak</p>
-            <p className="text-2xl font-black text-white">{gameStreak} {gameStreak === 1 ? 'day' : 'days'}</p>
+        {gameStreak !== null && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-5 border-2 border-white/20">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <span className="text-2xl">🔥</span>
+              <p className="text-white/80 text-sm uppercase tracking-wide">Game Streak</p>
+            </div>
+            <p className="text-3xl font-black text-white">
+              {gameStreak} {gameStreak === 1 ? 'day' : 'days'}
+            </p>
           </div>
         )}
         {!loading && earnedBadges.length > 0 && (
