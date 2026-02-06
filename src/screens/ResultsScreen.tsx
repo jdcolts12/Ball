@@ -130,3 +130,4 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
     </div>
   );
 }
+// Force redeploy - streak display fix
