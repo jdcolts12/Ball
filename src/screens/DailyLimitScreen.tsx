@@ -245,7 +245,7 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
             Last played: {lastPlayed ? formatDate(lastPlayed) : todaysGame ? 'Today' : '—'}
           </p>
           <p className="text-sm text-white/90 font-semibold">
-            {gameStreak} {gameStreak === 1 ? 'day' : 'days'} streak
+            Consecutive days streak: {gameStreak}
           </p>
           <p className="text-sm text-white/90 font-semibold">
             Next game in: <span className="font-mono font-bold text-amber-300 text-lg">{timeUntilNext}</span>
