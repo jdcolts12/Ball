@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { GameResultBreakdown } from './GameScreen';
 import { getGameBadges, getStreakBadge, calculatePerfectGameStreak, type Badge } from '../lib/badges';
 import { getUserGameHistory } from '../services/games';
+import { getUserPublicProfile } from '../services/profile';
 
 interface ResultsScreenProps {
   score: number;
@@ -17,6 +18,7 @@ interface ResultsScreenProps {
 export function ResultsScreen({ score, correct, total, breakdown, currentUserId, onLeaderboard, onHome, onOpenProfile }: ResultsScreenProps) {
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [gameStreak, setGameStreak] = useState<number | null>(null);
 
   useEffect(() => {
     async function calculateBadges() {
@@ -39,8 +41,17 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
       setEarnedBadges(gameBadges);
       setLoading(false);
     }
+    
+    async function fetchGameStreak() {
+      const { profile, error } = await getUserPublicProfile(currentUserId);
+      if (!error && profile) {
+        setGameStreak(profile.consecutive_days_played);
+      }
+    }
+    
     calculateBadges();
-  }, [breakdown]);
+    fetchGameStreak();
+  }, [breakdown, currentUserId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-green-900 via-green-800 to-green-900 text-white flex flex-col items-center justify-center p-6 relative overflow-hidden">
@@ -61,6 +72,12 @@ export function ResultsScreen({ score, correct, total, breakdown, currentUserId,
         <p className="text-3xl font-black text-white">
           {correct} / {total} correct
         </p>
+        {gameStreak !== null && gameStreak > 0 && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-white/20">
+            <p className="text-white/80 text-sm uppercase tracking-wide mb-1">Game Streak</p>
+            <p className="text-2xl font-black text-white">{gameStreak} {gameStreak === 1 ? 'day' : 'days'}</p>
+          </div>
+        )}
         {!loading && earnedBadges.length > 0 && (
           <div className="space-y-3 bg-white/10 backdrop-blur-sm rounded-xl p-6 border-2 border-white/20">
             <p className="text-white font-semibold text-sm uppercase tracking-wide">Badges Earned</p>
