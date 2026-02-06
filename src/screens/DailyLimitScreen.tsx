@@ -241,14 +241,12 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
 
         {/* Last played & Next game - always visible on this screen */}
         <div className="w-full max-w-sm mx-auto rounded-xl bg-white/15 backdrop-blur-sm border-2 border-white/25 p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-white/90 font-semibold">
-              Last played: {lastPlayed ? formatDate(lastPlayed) : todaysGame ? 'Today' : '—'}
-            </p>
-            <p className="text-sm text-white/90 font-semibold">
-              {gameStreak} {gameStreak === 1 ? 'day' : 'days'} streak
-            </p>
-          </div>
+          <p className="text-sm text-white/90 font-semibold">
+            Last played: {lastPlayed ? formatDate(lastPlayed) : todaysGame ? 'Today' : '—'}
+          </p>
+          <p className="text-sm text-white/90 font-semibold">
+            {gameStreak} {gameStreak === 1 ? 'day' : 'days'} streak
+          </p>
           <p className="text-sm text-white/90 font-semibold">
             Next game in: <span className="font-mono font-bold text-amber-300 text-lg">{timeUntilNext}</span>
           </p>
