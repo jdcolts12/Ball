@@ -407,10 +407,10 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
               <span className="font-bold text-white tabular-nums">{Math.round(profile.career_pct)}%</span>
             </div>
             <div className="flex justify-between items-center py-2.5 gap-4">
-              <span className="text-white/80 shrink-0" title="Best consecutive days with a perfect game (100% in one round).">
-                Perfect streak
+              <span className="text-white/80 text-sm max-w-[8.5rem] leading-tight" title="Best consecutive days with a perfect game (100% in one round).">
+                Best perfect game streak
               </span>
-              <span className="font-bold text-white tabular-nums">{profile.best_perfect_streak}</span>
+              <span className="font-bold text-white tabular-nums shrink-0">{profile.best_perfect_streak}</span>
             </div>
           </div>
         </div>
