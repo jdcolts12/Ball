@@ -6,17 +6,17 @@ import type { BadgeId } from '../lib/badges';
 const BADGE_EMOJIS: Record<BadgeId, string> = {
   perfect: '🏆',
   streak: '🔥',
-  career75: '🏅',
-  career85: '⭐',
-  career95: '💎',
+  career70: '🏅',
+  career80: '⭐',
+  career90: '💎',
 };
 
 const BADGE_LABELS: Record<BadgeId, string> = {
   perfect: 'Perfect',
   streak: 'Streak',
-  career75: '75%',
-  career85: '85%',
-  career95: '95%',
+  career70: '70%',
+  career80: '80%',
+  career90: '90%',
 };
 
 type Tab = 'daily' | 'monthly' | 'alltime';
@@ -229,9 +229,9 @@ export function LeaderboardScreen({ currentUserId, onBack, onOpenProfile }: Lead
             )}
             {tab === 'alltime' && (
               <>
-                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career95}</span>95%+</span>
-                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career85}</span>85%+</span>
-                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career75}</span>75%+</span>
+                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career90}</span>90%+</span>
+                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career80}</span>80%+</span>
+                <span className="flex items-center gap-1"><span>{BADGE_EMOJIS.career70}</span>70%+</span>
               </>
             )}
           </div>

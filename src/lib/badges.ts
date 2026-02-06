@@ -4,10 +4,10 @@
  * Badges:
  * - Perfect Game: Get all 4 questions correct in one game
  * - Perfect Game Streak: Consecutive days with perfect games (x2, x3, etc.)
- * - Career Percentage Badges: 75%, 85%, 95% career correct percentage
+ * - Career Percentage Badges: 70%, 80%, 90% career correct percentage
  */
 
-export type BadgeId = 'perfect' | 'streak' | 'career75' | 'career85' | 'career95';
+export type BadgeId = 'perfect' | 'streak' | 'career70' | 'career80' | 'career90';
 
 export interface Badge {
   id: BadgeId;
@@ -83,14 +83,14 @@ export function getCareerPercentageBadges(totalCorrect: number, totalQuestions: 
   const pct = (totalCorrect / totalQuestions) * 100;
   
   // Return only the highest badge earned
-  if (pct >= 95) {
-    return [{ id: 'career95', label: '95% Career', emoji: '💎' }];
+  if (pct >= 90) {
+    return [{ id: 'career90', label: '90% Career', emoji: '💎' }];
   }
-  if (pct >= 85) {
-    return [{ id: 'career85', label: '85% Career', emoji: '⭐' }];
+  if (pct >= 80) {
+    return [{ id: 'career80', label: '80% Career', emoji: '⭐' }];
   }
-  if (pct >= 75) {
-    return [{ id: 'career75', label: '75% Career', emoji: '🏅' }];
+  if (pct >= 70) {
+    return [{ id: 'career70', label: '70% Career', emoji: '🏅' }];
   }
   
   return [];

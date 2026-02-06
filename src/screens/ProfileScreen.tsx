@@ -342,7 +342,9 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
               <span className="font-bold text-white">{profile.total_games}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-white/70">Game streak</span>
+              <span className="text-white/70" title="Consecutive days played in a row (resets if you miss a day). Uses Pacific time.">
+                Game streak
+              </span>
               <span className="font-bold text-white">{profile.consecutive_days_played}</span>
             </div>
             <div className="flex justify-between">
@@ -365,16 +367,16 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
           const BADGE_EMOJIS: Record<BadgeId, string> = {
             perfect: '🏆',
             streak: '🔥',
-            career75: '🏅',
-            career85: '⭐',
-            career95: '💎',
+            career70: '🏅',
+            career80: '⭐',
+            career90: '💎',
           };
           const BADGE_LABELS: Record<BadgeId, string> = {
             perfect: 'Perfect',
             streak: 'Streak',
-            career75: '75%',
-            career85: '85%',
-            career95: '95%',
+            career70: '70%',
+            career80: '80%',
+            career90: '90%',
           };
           return (
             <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4">
