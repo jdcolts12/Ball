@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUserPublicProfile, updateMyProfile, uploadAvatar } from '../services/profile';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '../services/friends';
 import { updateUsername } from '../services/auth';
@@ -22,7 +22,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
   const [editAvatarUrl, setEditAvatarUrl] = useState('');
   const [editUsername, setEditUsername] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoUpdated, setPhotoUpdated] = useState(false);
 
   const isOwnProfile = userId === currentUserId;
 
@@ -85,12 +85,15 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
     e.target.value = '';
     setUploadingAvatar(true);
     setActionError(null);
+    setPhotoUpdated(false);
     const { url, error: uploadError } = await uploadAvatar(file);
     if (uploadError) {
       setActionError(uploadError.message);
     } else if (url) {
       setEditAvatarUrl(url);
       setProfile((p) => (p ? { ...p, avatar_url: url } : null));
+      setPhotoUpdated(true);
+      setTimeout(() => setPhotoUpdated(false), 3000);
     }
     setUploadingAvatar(false);
   };
@@ -196,28 +199,24 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
                   <span className="text-4xl text-white/60">?</span>
                 )}
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/gif,image/webp"
-                className="hidden"
-                onChange={handleAvatarFileChange}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploadingAvatar}
-                className="mb-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/40 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {uploadingAvatar ? 'Uploading…' : 'Choose from camera roll'}
-              </button>
-              <input
-                type="url"
-                placeholder="Or paste profile picture URL"
-                value={editAvatarUrl}
-                onChange={(e) => setEditAvatarUrl(e.target.value)}
-                className="w-full max-w-xs px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-2"
-              />
+              {uploadingAvatar ? (
+                <span className="mb-2 px-4 py-2 bg-white/20 border border-white/40 rounded-lg text-sm font-semibold text-white/80">
+                  Uploading…
+                </span>
+              ) : (
+                <label className="mb-2 px-4 py-2 bg-white/20 hover:bg-white/30 border border-white/40 rounded-lg text-sm font-semibold text-white cursor-pointer inline-block">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleAvatarFileChange}
+                  />
+                  Change photo
+                </label>
+              )}
+              {photoUpdated && (
+                <p className="mb-2 text-sm text-green-300">Photo updated</p>
+              )}
               <input
                 type="text"
                 placeholder="Username"
@@ -303,7 +302,19 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
         )}
 
         {actionError && (
-          <p className="text-red-300 text-sm text-center mb-4">{actionError}</p>
+          <p className="text-red-300 text-sm text-center mb-2">{actionError}</p>
+        )}
+        {actionError && (
+          actionError.toLowerCase().includes('bucket') ||
+          actionError.toLowerCase().includes('storage') ||
+          actionError.toLowerCase().includes('object') ||
+          actionError.toLowerCase().includes('policy') ||
+          actionError.toLowerCase().includes('not found') ||
+          actionError.toLowerCase().includes('resource')
+        ) && (
+          <p className="text-white/70 text-xs text-center mb-4">
+            Run <code className="bg-white/10 px-1 rounded">RUN_AVATARS_STORAGE.sql</code> in Supabase → SQL Editor to enable photo uploads.
+          </p>
         )}
 
         {/* Stats */}

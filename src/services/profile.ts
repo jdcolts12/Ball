@@ -96,8 +96,9 @@ export async function uploadAvatar(file: File): Promise<{
     .upload(path, file, { upsert: true, contentType: file.type });
   if (uploadError) return { url: null, error: new Error(uploadError.message) };
   const { data: urlData } = supabase.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-  const url = urlData?.publicUrl ?? null;
+  let url = urlData?.publicUrl ?? null;
   if (!url) return { url: null, error: new Error('Could not get image URL') };
+  url = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
   const updateRes = await updateMyProfile({ avatar_url: url });
   if (updateRes.error) return { url, error: updateRes.error };
   return { url, error: null };
