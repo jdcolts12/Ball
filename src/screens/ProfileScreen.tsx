@@ -406,6 +406,12 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
               <span className="text-white/80">Career %</span>
               <span className="font-bold text-white tabular-nums">{Math.round(profile.career_pct)}%</span>
             </div>
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
+              <span className="text-white/80" title="Number of games where you got every question correct (100% in one round).">
+                Total perfect games
+              </span>
+              <span className="font-bold text-white tabular-nums">{profile.total_perfect_games ?? 0}</span>
+            </div>
             <div className="flex justify-between items-center py-2.5 gap-4">
               <span className="text-white/80 text-sm max-w-[8.5rem] leading-tight" title="Best consecutive days with a perfect game (100% in one round).">
                 Best perfect game streak

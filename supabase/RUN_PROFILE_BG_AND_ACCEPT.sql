@@ -18,6 +18,7 @@ returns table (
   total_correct bigint,
   total_questions bigint,
   total_games bigint,
+  total_perfect_games bigint,
   consecutive_days_played bigint,
   best_perfect_streak bigint
 )
@@ -71,6 +72,13 @@ as $$
     group by grp
     order by min(d) desc
     limit 1
+  ),
+  total_perfect as (
+    select count(*)::bigint as cnt
+    from public.games g
+    where g.user_id = target_user_id
+      and g.correct_answers = g.questions_answered
+      and g.questions_answered >= 4
   )
   select
     pr.id as user_id,
@@ -81,13 +89,15 @@ as $$
     coalesce(sr.total_correct, 0)::bigint as total_correct,
     coalesce(sr.total_questions, 0)::bigint as total_questions,
     coalesce(sr.total_games, 0)::bigint as total_games,
+    coalesce(tp.cnt, 0)::bigint as total_perfect_games,
     coalesce(c.days, 0)::bigint as consecutive_days_played,
     coalesce(sc.streak, 0)::bigint as best_perfect_streak
   from profile_row pr
   cross join lateral (select 1) _
   left join stats_row sr on true
   left join consecutive c on true
-  left join streak_calc sc on true;
+  left join streak_calc sc on true
+  left join total_perfect tp on true;
 $$;
 
 -- Fix accept_friend_request: use table alias so from_user_id is not ambiguous

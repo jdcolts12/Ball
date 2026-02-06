@@ -25,6 +25,8 @@ export interface UserPublicProfile {
   total_correct: number;
   total_questions: number;
   total_games: number;
+  /** Number of games with 100% correct (perfect games) */
+  total_perfect_games: number;
   consecutive_days_played: number;
   best_perfect_streak: number;
 }
