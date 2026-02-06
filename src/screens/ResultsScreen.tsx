@@ -8,11 +8,13 @@ interface ResultsScreenProps {
   correct: number;
   total: number;
   breakdown: GameResultBreakdown;
+  currentUserId: string;
   onLeaderboard: () => void;
   onHome: () => void;
+  onOpenProfile: (userId: string) => void;
 }
 
-export function ResultsScreen({ score, correct, total, breakdown, onLeaderboard, onHome }: ResultsScreenProps) {
+export function ResultsScreen({ score, correct, total, breakdown, currentUserId, onLeaderboard, onHome, onOpenProfile }: ResultsScreenProps) {
   const [earnedBadges, setEarnedBadges] = useState<Badge[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,6 +88,13 @@ export function ResultsScreen({ score, correct, total, breakdown, onLeaderboard,
             className="px-6 py-3 bg-white text-green-900 hover:bg-yellow-400 font-black text-lg rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg uppercase tracking-wide"
           >
             View leaderboard
+          </button>
+          <button
+            type="button"
+            onClick={() => onOpenProfile(currentUserId)}
+            className="px-6 py-3 bg-white/20 hover:bg-white/30 text-white border-2 border-white/40 hover:border-white/60 font-bold text-base rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg"
+          >
+            My Profile
           </button>
           <button
             type="button"

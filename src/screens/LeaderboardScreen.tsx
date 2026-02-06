@@ -92,6 +92,14 @@ export function LeaderboardScreen({ currentUserId, onBack, onOpenProfile }: Lead
           <div className="flex gap-1.5 sm:gap-2">
             <button
               type="button"
+              onClick={() => onOpenProfile(currentUserId)}
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all backdrop-blur-sm"
+              title="My Profile"
+            >
+              Profile
+            </button>
+            <button
+              type="button"
               onClick={() => load()}
               disabled={loading}
               className="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 text-white rounded-lg text-xs sm:text-sm font-semibold transition-all backdrop-blur-sm disabled:opacity-50"

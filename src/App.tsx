@@ -80,8 +80,10 @@ function App() {
           correct={results.correct}
           total={results.total}
           breakdown={results.breakdown}
+          currentUserId={user.id}
           onLeaderboard={() => setScreen('leaderboard')}
           onHome={() => { refreshCanPlay().then(() => { setResults(null); setScreen('home'); }); }}
+          onOpenProfile={(uid) => { setProfileUserId(uid); setScreen('profile'); }}
         />
       </div>
     );
