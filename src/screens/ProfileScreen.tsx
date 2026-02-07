@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getUserPublicProfile, updateMyProfile, uploadAvatar } from '../services/profile';
+import { getUserPublicProfile, getUserCareerPercentile, updateMyProfile, uploadAvatar } from '../services/profile';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, getMyFriendIds, getPendingFriendRequestIds } from '../services/friends';
+import { getCurrentUserWeeklyPct } from '../services/games';
 import { updateUsername } from '../services/auth';
 import { getCareerPercentageBadges, getStreakBadge } from '../lib/badges';
 import type { UserPublicProfile, ProfileBgColor } from '../types/database';
@@ -26,6 +27,20 @@ const PROFILE_BG_CLASSES: Record<string, string> = {
 
 function getProfileBgClass(color: string | null | undefined): string {
   return PROFILE_BG_CLASSES[color ?? 'green'] ?? PROFILE_BG_CLASSES.green;
+}
+
+/** Tier from raw % (used for weekly badge): Casual <60%, Ball Knower 61–80%, Historian 81–100%. */
+function getBallKnowerTier(pct: number): { emoji: string; label: string } {
+  if (pct >= 81) return { emoji: '🐐', label: 'Historian' };
+  if (pct >= 61) return { emoji: '🔥', label: 'Ball Knower' };
+  return { emoji: '🧠', label: 'Casual' };
+}
+
+/** Career tier from percentile among users (0–100, 100 = best): bottom third Casual, middle Ball Knower, top Historian. */
+function getBallKnowerTierByPercentile(percentile: number): { emoji: string; label: string } {
+  if (percentile >= 67) return { emoji: '🐐', label: 'Historian' };
+  if (percentile >= 34) return { emoji: '🔥', label: 'Ball Knower' };
+  return { emoji: '🧠', label: 'Casual' };
 }
 
 interface ProfileScreenProps {
@@ -54,6 +69,8 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   const [friendProfiles, setFriendProfiles] = useState<UserPublicProfile[]>([]);
   const [pendingProfiles, setPendingProfiles] = useState<UserPublicProfile[]>([]);
   const [friendsLoading, setFriendsLoading] = useState(false);
+  const [weeklyPct, setWeeklyPct] = useState<{ correct: number; total: number; pct: number } | null>(null);
+  const [careerPercentile, setCareerPercentile] = useState<number | null>(null);
 
   const isOwnProfile = userId === currentUserId;
 
@@ -80,6 +97,7 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
     } else if (!isOwnProfile) {
       setFriendship(statusRes.status ?? null);
     }
+    setCareerPercentile(percentileRes.error ? null : percentileRes.percentile ?? null);
     setLoading(false);
   }, [userId, isOwnProfile]);
 
@@ -112,6 +130,17 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   useEffect(() => {
     loadFriendsAndRequests();
   }, [loadFriendsAndRequests]);
+
+  useEffect(() => {
+    if (!isOwnProfile) return;
+    getCurrentUserWeeklyPct().then((res) => {
+      if (!res.error && (res.total > 0 || res.correct > 0)) {
+        setWeeklyPct({ correct: res.correct, total: res.total, pct: res.pct });
+      } else {
+        setWeeklyPct(null);
+      }
+    });
+  }, [isOwnProfile]);
 
   const handleSendRequest = async () => {
     setActionBusy(true);
@@ -367,6 +396,26 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
             </>
           )}
         </div>
+
+        {/* Top X% ball knowledge (only when percentile applies) + weekly badge — right under name, above Stats */}
+        {profile && (careerPercentile != null && careerPercentile >= 60 || (isOwnProfile && weeklyPct !== null && weeklyPct.total > 0)) && (
+          <div className="flex flex-col items-center gap-2 mb-5 sm:mb-6">
+            {careerPercentile != null && careerPercentile >= 60 && (() => {
+              const careerTier = getBallKnowerTierByPercentile(careerPercentile);
+              const topPctRounded = Math.max(5, Math.min(40, Math.round((100 - careerPercentile) / 5) * 5));
+              return (
+                <p className="text-white/90 font-semibold text-sm sm:text-base">
+                  {careerTier.emoji} Top {topPctRounded}% ball knowledge
+                </p>
+              );
+            })()}
+            {isOwnProfile && weeklyPct !== null && weeklyPct.total > 0 && (
+              <p className="text-white font-bold text-base sm:text-lg">
+                This week: {getBallKnowerTier(weeklyPct.pct).emoji} {getBallKnowerTier(weeklyPct.pct).label}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Friend actions (other user only) */}
         {!isOwnProfile && (

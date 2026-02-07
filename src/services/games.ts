@@ -107,6 +107,77 @@ function getPSTDateBoundaries(): { startISO: string; endISO: string } {
 }
 
 /**
+ * Get current PST week boundaries: Sunday 00:00 to Saturday 23:59:59.999 (America/Los_Angeles).
+ * Used for weekly badge on profile.
+ */
+function getPSTWeekBoundaries(): { startISO: string; endISO: string } {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    weekday: 'short',
+  });
+  const parts = formatter.formatToParts(now);
+  const year = parseInt(parts.find((p) => p.type === 'year')?.value ?? '0', 10);
+  const month = parseInt(parts.find((p) => p.type === 'month')?.value ?? '1', 10);
+  const day = parseInt(parts.find((p) => p.type === 'day')?.value ?? '1', 10);
+  const weekday = parts.find((p) => p.type === 'weekday')?.value ?? 'Sun';
+  const dayMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  const dayOfWeek = dayMap[weekday] ?? 0;
+  const startDate = new Date(year, month - 1, day - dayOfWeek);
+  const endDate = new Date(year, month - 1, day - dayOfWeek + 6);
+  const isDST = now.toLocaleDateString('en-US', { timeZone: 'America/Los_Angeles', timeZoneName: 'short' }).includes('PDT');
+  const offsetHours = isDST ? 7 : 8;
+  const startUTC = new Date(Date.UTC(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate(),
+    offsetHours,
+    0,
+    0,
+    0
+  ));
+  const sundayNextWeek = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate() + 7);
+  const endUTC = new Date(Date.UTC(
+    sundayNextWeek.getFullYear(),
+    sundayNextWeek.getMonth(),
+    sundayNextWeek.getDate(),
+    offsetHours,
+    0,
+    0,
+    0
+  ) - 1);
+  return { startISO: startUTC.toISOString(), endISO: endUTC.toISOString() };
+}
+
+/**
+ * Get current user's correct % for the current week (Sunday–Saturday PST). For profile weekly badge.
+ */
+export async function getCurrentUserWeeklyPct(): Promise<{
+  correct: number;
+  total: number;
+  pct: number;
+  error: Error | null;
+}> {
+  const { games, error } = await getUserGameHistory();
+  if (error) return { correct: 0, total: 0, pct: 0, error };
+  const { startISO, endISO } = getPSTWeekBoundaries();
+  let correct = 0;
+  let total = 0;
+  for (const g of games) {
+    const at = g.created_at ?? '';
+    if (at >= startISO && at <= endISO) {
+      correct += g.correct_answers ?? 0;
+      total += g.questions_answered ?? 0;
+    }
+  }
+  const pct = total > 0 ? (correct / total) * 100 : 0;
+  return { correct, total, pct, error: null };
+}
+
+/**
  * Fetch today's game for the current user (most recent game created today, PST timezone).
  * Uses PST midnight → PST end-of-day converted to ISO for UTC comparison.
  * This matches the SQL functions which use PST timezone.

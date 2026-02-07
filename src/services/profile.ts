@@ -63,6 +63,14 @@ export async function getUserPublicProfile(userId: string): Promise<{
   return { profile: null, error: new Error(error.message) };
 }
 
+/** Career % percentile (0–100) among all players; 100 = best. Used for Ball Knower tier. Returns null if no stats or RPC missing. */
+export async function getUserCareerPercentile(userId: string): Promise<{ percentile: number | null; error: Error | null }> {
+  const { data, error } = await supabase.rpc('get_user_career_percentile', { target_user_id: userId });
+  if (error) return { percentile: null, error: new Error(error.message) };
+  const val = data != null ? Number(data) : null;
+  return { percentile: Number.isFinite(val) ? val : null, error: null };
+}
+
 export async function updateMyProfile(updates: {
   username?: string;
   avatar_url?: string | null;
