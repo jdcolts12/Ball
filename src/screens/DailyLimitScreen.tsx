@@ -121,18 +121,18 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
             <div className="pt-4 border-t border-white/20">
               <div className="text-sm font-semibold text-white/90 mb-3">Question Breakdown:</div>
               <div className="space-y-4 text-left">
-                {questions[0]?.type === 'draft' && (
+                {(questions[0]?.type === 'draft' || questions[0]?.type === 'superBowlWinner') && (
                   <div>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1">
                         <div className="text-white font-semibold text-sm">
-                          {questions[0].year} NFL Draft
+                          {questions[0].type === 'superBowlWinner' ? `Who won Super Bowl ${questions[0].roman} (${questions[0].year}) vs the ${questions[0].loser}?` : questions[0].type === 'draft' ? `${questions[0].year} NFL Draft` : ''}
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
                           Your answer: <span className={todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_draft || '—'}</span>
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
-                          Correct: {questions[0].correctAnswer}
+                          Correct: {questions[0].type === 'superBowlWinner' ? questions[0].correctAnswer : questions[0].correctAnswer}
                         </div>
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}`}>
@@ -141,18 +141,18 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
                     </div>
                   </div>
                 )}
-                {questions[1]?.type === 'college' && (
+                {(questions[1]?.type === 'college' || questions[1]?.type === 'superBowlMVP') && (
                   <div>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1">
                         <div className="text-white font-semibold text-sm">
-                          Which college did {questions[1].name} attend?
+                          {questions[1].type === 'superBowlMVP' ? `Who was Super Bowl ${questions[1].roman} MVP? (${questions[1].winner} vs ${questions[1].loser})` : questions[1].type === 'college' ? `Which college did ${questions[1].name} attend?` : ''}
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
                           Your answer: <span className={todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_college || '—'}</span>
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
-                          Correct: {questions[1].college}
+                          Correct: {questions[1].type === 'superBowlMVP' ? questions[1].correctAnswer : questions[1].type === 'college' ? questions[1].college : ''}
                         </div>
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}`}>
@@ -161,16 +161,18 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
                     </div>
                   </div>
                 )}
-                {questions[2]?.type === 'careerPath' && (
+                {(questions[2]?.type === 'careerPath' || questions[2]?.type === 'superBowlLoser') && (
                   <div>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1">
                         <div className="text-white font-semibold text-sm">
-                          Guess the {questions[2].position} by career path
+                          {questions[2].type === 'superBowlLoser' ? `Who lost Super Bowl ${questions[2].roman} (${questions[2].year}) to the ${questions[2].winner}?` : questions[2].type === 'careerPath' ? `Guess the ${questions[2].position} by career path` : ''}
                         </div>
-                        <div className="text-white/70 text-xs mt-0.5">
-                          {questions[2].college} → {questions[2].nflStints.map(s => s.team).join(', ')}
-                        </div>
+                        {questions[2].type === 'careerPath' && (
+                          <div className="text-white/70 text-xs mt-0.5">
+                            {questions[2].college} → {questions[2].nflStints.map(s => s.team).join(', ')}
+                          </div>
+                        )}
                         <div className="text-white/70 text-xs mt-0.5">
                           Your answer: <span className={todaysGame.correct_career_path ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_career_path || '—'}</span>
                         </div>
@@ -184,36 +186,20 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
                     </div>
                   </div>
                 )}
-                {questions[3]?.type === 'seasonLeader' && (() => {
-                  // Infer if season leader was correct:
-                  // Count how many of the other 3 questions were correct
+                {(questions[3]?.type === 'seasonLeader' || questions[3]?.type === 'superBowlCity') && (() => {
                   const otherThreeCorrect = (todaysGame.correct_draft ? 1 : 0) + (todaysGame.correct_college ? 1 : 0) + (todaysGame.correct_career_path ? 1 : 0);
-                  // Season leader is correct if total correct answers > other three correct
-                  // (meaning season leader contributed to the total)
                   const seasonLeaderCorrect = todaysGame.correct_answers > otherThreeCorrect;
+                  const q3 = questions[3];
+                  const label = q3.type === 'superBowlCity'
+                    ? `Where was Super Bowl ${q3.roman} (${q3.year}) played? (${q3.winner} vs ${q3.loser})`
+                    : q3.type === 'seasonLeader'
+                      ? `Who led the NFL in ${q3.category === 'passingTDs' ? 'passing touchdowns' : q3.category === 'rushingTDs' ? 'rushing touchdowns' : q3.category === 'receivingTDs' ? 'receiving touchdowns' : q3.category === 'sacks' ? 'sacks' : q3.category === 'interceptions' ? 'interceptions' : q3.category === 'passing' ? 'passing yards' : q3.category === 'rushing' ? 'rushing yards' : 'receiving yards'} in ${q3.year}?`
+                      : '';
                   return (
                     <div>
                       <div className="flex items-start justify-between mb-1">
                         <div className="flex-1">
-                          <div className="text-white font-semibold text-sm">
-                            Who led the NFL in{' '}
-                            {questions[3].category === 'passingTDs'
-                              ? 'passing touchdowns'
-                              : questions[3].category === 'rushingTDs'
-                                ? 'rushing touchdowns'
-                                : questions[3].category === 'receivingTDs'
-                                  ? 'receiving touchdowns'
-                                  : questions[3].category === 'sacks'
-                                    ? 'sacks'
-                                    : questions[3].category === 'interceptions'
-                                      ? 'interceptions'
-                                      : questions[3].category === 'passing'
-                                        ? 'passing yards'
-                                        : questions[3].category === 'rushing'
-                                          ? 'rushing yards'
-                                          : 'receiving yards'}{' '}
-                            in {questions[3].year}?
-                          </div>
+                          <div className="text-white font-semibold text-sm">{label}</div>
                           <div className="text-white/70 text-xs mt-0.5">
                             Your answer: <span className={seasonLeaderCorrect ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_season_leader || '—'}</span>
                           </div>

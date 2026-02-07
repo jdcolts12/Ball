@@ -8,6 +8,25 @@ export async function getMyFriendIds(): Promise<{ friendIds: string[]; error: Er
   return { friendIds: ids.filter(Boolean), error: null };
 }
 
+/** Pending friend requests received by the current user (from_user_id list). */
+export async function getPendingFriendRequestIds(): Promise<{
+  pendingFromIds: string[];
+  error: Error | null;
+}> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { pendingFromIds: [], error: new Error('Not authenticated') };
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('from_user_id')
+    .eq('to_user_id', user.id)
+    .eq('status', 'pending');
+  if (error) return { pendingFromIds: [], error: new Error(error.message) };
+  const ids = (data ?? []).map((row: { from_user_id: string }) => row.from_user_id).filter(Boolean);
+  return { pendingFromIds: ids, error: null };
+}
+
 export async function sendFriendRequest(toUserId: string): Promise<{
   ok: boolean;
   accepted?: boolean;

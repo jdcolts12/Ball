@@ -1,18 +1,29 @@
 /**
- * Block play if user already played today (local date).
+ * Block play if user already played today. Uses PST so the day doesn't change until midnight Pacific.
  * lastPlayed === today → block. Else → allow.
- * Uses localStorage keyed by the user's local date (YYYY-MM-DD).
+ * Uses localStorage keyed by PST date (YYYY-MM-DD).
  */
 
 const STORAGE_KEY = 'football-trivia-last-played';
 
-/** Get today's date in the user's local timezone as YYYY-MM-DD. */
-export function getLocalDateString(): string {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
+/** Get today's date in PST (America/Los_Angeles) as YYYY-MM-DD. Day doesn't change until midnight Pacific. */
+export function getPstDateString(): string {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((p) => p.type === 'year')?.value ?? '';
+  const month = parts.find((p) => p.type === 'month')?.value ?? '';
+  const day = parts.find((p) => p.type === 'day')?.value ?? '';
   return `${year}-${month}-${day}`;
+}
+
+/** @deprecated Use getPstDateString for game date and play limit. Kept for backwards compatibility. */
+export function getLocalDateString(): string {
+  return getPstDateString();
 }
 
 /**
@@ -31,10 +42,10 @@ export function getLastPlayed(): string | null {
 }
 
 /**
- * True if the user has already played today (local date) → block play.
+ * True if the user has already played today (PST date) → block play.
  */
 export function hasPlayedToday(): boolean {
-  const today = getLocalDateString();
+  const today = getPstDateString();
   const last = getLastPlayed();
   return last === today;
 }
@@ -47,11 +58,11 @@ export function canPlayToday(): boolean {
 }
 
 /**
- * Call when a game is completed. Sets lastPlayed to today (local date).
+ * Call when a game is completed. Sets lastPlayed to today (PST date).
  */
 export function recordPlay(): void {
   try {
-    localStorage.setItem(STORAGE_KEY, getLocalDateString());
+    localStorage.setItem(STORAGE_KEY, getPstDateString());
   } catch {
     // ignore (e.g. private mode)
   }

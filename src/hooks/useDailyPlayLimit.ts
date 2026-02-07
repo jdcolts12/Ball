@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { getLocalDateString } from '../lib/dailyPlayLimit';
+import { getPstDateString } from '../lib/dailyPlayLimit';
 import { recordPlay as recordPlayStorage } from '../lib/dailyPlayLimit';
 import { hasPlayedTodayFromServer } from '../services/games';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,7 +58,7 @@ export function useDailyPlayLimit() {
     }
   }, [refreshCanPlay, user, initializing]);
 
-  const today = getLocalDateString();
+  const today = getPstDateString();
 
   /** Block when already played today; block when still loading (null) so we don't allow play before server check. */
   const canPlay = DAILY_LIMIT_DISABLED || playedToday === false;

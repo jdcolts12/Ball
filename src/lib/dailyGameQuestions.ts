@@ -2,8 +2,20 @@ import type { PlayerQuestion } from '../data/players';
 import { players } from '../data/players';
 import { careerPathPlayers } from '../data/careerPathPlayers';
 import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
-import { getLocalDateString } from './dailyPlayLimit';
+import { superBowlFacts, superBowlTeamPool, superBowlCityPool } from '../data/superBowlFacts';
+import { getPstDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
+
+/** Super Bowl weekend 2026: themed questions on Saturday & Sunday of SB LX. Update each year if needed. */
+const SUPER_BOWL_WEEKEND_DATES = ['2026-02-07', '2026-02-08'];
+
+/** Super Bowl years to use for weekend questions (inclusive). */
+const SUPER_BOWL_WEEKEND_YEAR_MIN = 1999;
+const SUPER_BOWL_WEEKEND_YEAR_MAX = 2015;
+
+export function isSuperBowlWeekendDate(dateString: string): boolean {
+  return SUPER_BOWL_WEEKEND_DATES.includes(dateString);
+}
 
 export type CollegeQuestion = {
   type: 'college';
@@ -43,7 +55,19 @@ export type SeasonLeaderQuestion = {
   options: [string, string, string, string]; // Formatted options (may include stat values)
 };
 
-export type GameQuestion = CollegeQuestion | DraftQuestion | CareerPathQuestion | SeasonLeaderQuestion;
+export type SuperBowlQuestionKind = 'superBowlWinner' | 'superBowlMVP' | 'superBowlLoser' | 'superBowlCity';
+
+export type SuperBowlQuestion = {
+  type: SuperBowlQuestionKind;
+  roman: string; // e.g. "LVIII"
+  year: number;
+  winner: string;
+  loser: string;
+  correctAnswer: string;
+  options: [string, string, string, string];
+};
+
+export type GameQuestion = CollegeQuestion | DraftQuestion | CareerPathQuestion | SeasonLeaderQuestion | SuperBowlQuestion;
 
 function hashString(s: string): number {
   let h = 0;
@@ -66,12 +90,57 @@ const shuffle = (date: string) => <T>(arr: T[]): T[] => {
   return out;
 };
 
+function getSuperBowlQuestions(date: string): GameQuestion[] {
+  const doShuffle = shuffle(date);
+  const weekendFacts = superBowlFacts.filter(
+    (f) => f.year >= SUPER_BOWL_WEEKEND_YEAR_MIN && f.year <= SUPER_BOWL_WEEKEND_YEAR_MAX
+  );
+  const idx = seededIndex(hashString(date + 'sb'), weekendFacts.length);
+  const sb = weekendFacts[idx];
+
+  // Tough wrong answers: use only era-appropriate, plausible choices from the same Super Bowl set
+  const otherWinners = [...new Set(weekendFacts.map((f) => f.winner).filter((w) => w !== sb.winner))];
+  const otherLosers = [...new Set(weekendFacts.map((f) => f.loser).filter((l) => l !== sb.loser))];
+  const otherCitiesFromEra = [...new Set(weekendFacts.map((f) => f.city).filter((c) => c !== sb.city))];
+  const otherMvps = weekendFacts.filter((f) => f.mvp !== sb.mvp).map((f) => f.mvp);
+
+  const pickWrong = <T>(pool: T[], correct: T, n: number): T[] => {
+    const rest = [...new Set(pool.filter((x) => x !== correct))];
+    return doShuffle(rest).slice(0, n) as T[];
+  };
+
+  // Winner Q: wrong options = other SB winners from era (all plausible champs); if needed, add losers from era
+  const winnerWrongPool = otherWinners.length >= 3 ? otherWinners : [...otherWinners, ...otherLosers.filter((l) => !otherWinners.includes(l))];
+  const winnerOptions = doShuffle([sb.winner, ...pickWrong(winnerWrongPool, sb.winner, 3)]) as [string, string, string, string];
+
+  // MVP Q: wrong options = other MVPs from same era (all plausible MVPs)
+  const mvpOptions = doShuffle([sb.mvp, ...pickWrong(otherMvps, sb.mvp, 3)]) as [string, string, string, string];
+
+  // Loser Q: wrong options = other SB losers from era (all plausible runners-up); if needed, add winners
+  const loserWrongPool = otherLosers.length >= 3 ? otherLosers : [...otherLosers, ...otherWinners.filter((w) => !otherLosers.includes(w))];
+  const loserOptions = doShuffle([sb.loser, ...pickWrong(loserWrongPool, sb.loser, 3)]) as [string, string, string, string];
+
+  // City Q: wrong options = other SB host cities from era (all real SB sites)
+  const cityWrongPool = otherCitiesFromEra.length >= 3 ? otherCitiesFromEra : superBowlCityPool.filter((c) => c !== sb.city);
+  const cityOptions = doShuffle([sb.city, ...pickWrong(cityWrongPool, sb.city, 3)]) as [string, string, string, string];
+
+  return [
+    { type: 'superBowlWinner', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.winner, options: winnerOptions },
+    { type: 'superBowlMVP', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.mvp, options: mvpOptions },
+    { type: 'superBowlLoser', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.loser, options: loserOptions },
+    { type: 'superBowlCity', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.city, options: cityOptions },
+  ];
+}
+
 /**
  * Returns the same 4 questions for everyone on the same calendar day:
- * 1 draft (missing player in top 10) + 1 college (which college) + 1 career path (guess player by college + NFL teams) + 1 season leader (single-season record).
+ * On Super Bowl weekend: 4 Super Bowl questions (winner, MVP, loser, city).
+ * Otherwise: 1 draft + 1 college + 1 career path + 1 season leader.
  */
 export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
-  const date = dateString ?? getLocalDateString();
+  const date = dateString ?? getPstDateString();
+  if (isSuperBowlWeekendDate(date)) return getSuperBowlQuestions(date);
+
   const draftQ = getDailyDraftQuestion(date);
   const doShuffle = shuffle(date);
 

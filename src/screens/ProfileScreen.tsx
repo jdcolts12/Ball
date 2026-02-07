@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUserPublicProfile, updateMyProfile, uploadAvatar } from '../services/profile';
-import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest } from '../services/friends';
+import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, getMyFriendIds, getPendingFriendRequestIds } from '../services/friends';
 import { updateUsername } from '../services/auth';
 import { getCareerPercentageBadges, getStreakBadge } from '../lib/badges';
 import type { UserPublicProfile, ProfileBgColor } from '../types/database';
@@ -28,9 +28,11 @@ interface ProfileScreenProps {
   userId: string;
   currentUserId: string;
   onBack: () => void;
+  /** When viewing own profile, open another user's profile (e.g. from friends list). */
+  onOpenProfile?: (userId: string) => void;
 }
 
-export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenProps) {
+export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: ProfileScreenProps) {
   const [profile, setProfile] = useState<UserPublicProfile | null>(null);
   const [friendship, setFriendship] = useState<FriendshipStatus>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +45,11 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
   const [editProfileBgColor, setEditProfileBgColor] = useState<string>('green');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [photoUpdated, setPhotoUpdated] = useState(false);
+  /** Own profile: Friends / Requests tab */
+  const [friendsTab, setFriendsTab] = useState<'friends' | 'requests'>('friends');
+  const [friendProfiles, setFriendProfiles] = useState<UserPublicProfile[]>([]);
+  const [pendingProfiles, setPendingProfiles] = useState<UserPublicProfile[]>([]);
+  const [friendsLoading, setFriendsLoading] = useState(false);
 
   const isOwnProfile = userId === currentUserId;
 
@@ -76,24 +83,57 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
     load();
   }, [load]);
 
+  const loadFriendsAndRequests = useCallback(async () => {
+    if (!isOwnProfile) return;
+    setFriendsLoading(true);
+    const [friendsRes, pendingRes] = await Promise.all([
+      getMyFriendIds(),
+      getPendingFriendRequestIds(),
+    ]);
+    const friendIds = friendsRes.error ? [] : friendsRes.friendIds;
+    const pendingIds = pendingRes.error ? [] : pendingRes.pendingFromIds;
+    const [friendProfs, pendingProfs] = await Promise.all([
+      Promise.all(friendIds.map((id) => getUserPublicProfile(id))).then((arr) =>
+        arr.map((r) => r.profile).filter(Boolean) as UserPublicProfile[],
+      ),
+      Promise.all(pendingIds.map((id) => getUserPublicProfile(id))).then((arr) =>
+        arr.map((r) => r.profile).filter(Boolean) as UserPublicProfile[],
+      ),
+    ]);
+    setFriendProfiles(friendProfs);
+    setPendingProfiles(pendingProfs);
+    setFriendsLoading(false);
+  }, [isOwnProfile]);
+
+  useEffect(() => {
+    loadFriendsAndRequests();
+  }, [loadFriendsAndRequests]);
+
   const handleSendRequest = async () => {
     setActionBusy(true);
     setActionError(null);
     const res = await sendFriendRequest(userId);
     if (res.ok) {
       setFriendship(res.accepted ? 'friends' : 'pending_sent');
+      // Refetch from server so UI is in sync
+      const { status } = await getFriendshipStatus(userId);
+      if (status) setFriendship(status);
     } else {
       setActionError(res.error ?? 'Failed');
     }
     setActionBusy(false);
   };
 
-  const handleAccept = async () => {
+  const handleAccept = async (acceptUserId?: string) => {
+    const uid = acceptUserId ?? userId;
     setActionBusy(true);
     setActionError(null);
-    const res = await acceptFriendRequest(userId);
+    const res = await acceptFriendRequest(uid);
     if (res.ok) {
       setFriendship('friends');
+      const { status } = await getFriendshipStatus(uid);
+      if (status) setFriendship(status);
+      if (isOwnProfile) await loadFriendsAndRequests();
     } else {
       setActionError(res.error ?? 'Failed');
     }
@@ -344,7 +384,7 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
               {friendship === 'pending_received' && (
                 <button
                   type="button"
-                  onClick={handleAccept}
+                  onClick={() => handleAccept()}
                   disabled={actionBusy}
                   className="px-4 py-2 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
                 >
@@ -420,6 +460,92 @@ export function ProfileScreen({ userId, currentUserId, onBack }: ProfileScreenPr
             </div>
           </div>
         </div>
+
+        {/* Friends / Requests (own profile only) */}
+        {isOwnProfile && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden">
+            <div className="flex border-b border-white/20">
+              <button
+                type="button"
+                onClick={() => setFriendsTab('friends')}
+                className={`flex-1 py-3 px-4 text-sm font-semibold transition ${friendsTab === 'friends' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+              >
+                Friends
+              </button>
+              <button
+                type="button"
+                onClick={() => setFriendsTab('requests')}
+                className={`relative flex-1 py-3 px-4 text-sm font-semibold transition ${friendsTab === 'requests' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+              >
+                Requests
+                {pendingProfiles.length > 0 && (
+                  <span className="absolute top-1.5 right-2 min-w-[1.25rem] h-5 px-1 rounded-full bg-yellow-400 text-green-900 text-xs font-bold flex items-center justify-center">
+                    {pendingProfiles.length}
+                  </span>
+                )}
+              </button>
+            </div>
+            <div className="p-3 min-h-[6rem]">
+              {friendsLoading ? (
+                <p className="text-white/70 text-sm text-center py-4">Loading…</p>
+              ) : friendsTab === 'friends' ? (
+                friendProfiles.length === 0 ? (
+                  <p className="text-white/70 text-sm text-center py-4">No friends yet. Add people from the leaderboard.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {friendProfiles.map((p) => (
+                      <li key={p.user_id}>
+                        <button
+                          type="button"
+                          onClick={() => onOpenProfile?.(p.user_id)}
+                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 text-left"
+                        >
+                          <img
+                            src={p.avatar_url || DEFAULT_AVATAR}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover border-2 border-white/30"
+                          />
+                          <span className="font-medium text-white truncate">{p.username || 'Player'}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              ) : (
+                pendingProfiles.length === 0 ? (
+                  <p className="text-white/70 text-sm text-center py-4">No pending requests.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {pendingProfiles.map((p) => (
+                      <li key={p.user_id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5">
+                        <button
+                          type="button"
+                          onClick={() => onOpenProfile?.(p.user_id)}
+                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                        >
+                          <img
+                            src={p.avatar_url || DEFAULT_AVATAR}
+                            alt=""
+                            className="w-10 h-10 rounded-full object-cover border-2 border-white/30 shrink-0"
+                          />
+                          <span className="font-medium text-white truncate">{p.username || 'Player'}</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleAccept(p.user_id)}
+                          disabled={actionBusy}
+                          className="shrink-0 px-3 py-1.5 bg-yellow-400 text-green-900 font-bold rounded-lg text-sm disabled:opacity-50"
+                        >
+                          Accept
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Badges */}
         {(() => {

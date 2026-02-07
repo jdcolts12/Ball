@@ -1,9 +1,10 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import type { GameQuestion } from '../lib/dailyGameQuestions';
-import { getDailyGameQuestions } from '../lib/dailyGameQuestions';
+import { getDailyGameQuestions, isSuperBowlWeekendDate } from '../lib/dailyGameQuestions';
 import { getPickLabel } from '../lib/dailyDraftQuestion';
 import { getNflLogoUrl } from '../lib/teamLogos';
 import { isCloseEnough } from '../lib/stringSimilarity';
+import { getPstDateString } from '../lib/dailyPlayLimit';
 import { getDraftCorrectPctToday, getCollegeCorrectPctToday, getCareerPathCorrectPctToday, includeCurrentPlayer } from '../services/games';
 
 export interface GameResultBreakdown {
@@ -15,6 +16,8 @@ export interface GameResultBreakdown {
   userAnswerCollege?: string;
   userAnswerCareerPath?: string;
   userAnswerSeasonLeader?: string;
+  /** True when the game was Super Bowl weekend (4 Super Bowl questions). */
+  isSuperBowlWeekend?: boolean;
 }
 
 interface GameScreenProps {
@@ -22,7 +25,9 @@ interface GameScreenProps {
 }
 
 export function GameScreen({ onEnd }: GameScreenProps) {
-  const questions = useMemo(() => getDailyGameQuestions(), []);
+  const date = useMemo(() => getPstDateString(), []);
+  const questions = useMemo(() => getDailyGameQuestions(date), [date]);
+  const isSuperBowlWeekend = isSuperBowlWeekendDate(date);
 
   const [index, setIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -70,11 +75,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
       } else if (current.type === 'college') {
         getCollegeCorrectPctToday().then(({ total, correct: correctCount, error }) =>
           setQuestionCorrectPct(error ? null : includeCurrentPlayer(total, correctCount, currentCorrect)));
-      } else if (current.type === 'careerPath') {
-        getCareerPathCorrectPctToday().then(({ total, correct: correctCount, error }) =>
-          setQuestionCorrectPct(error ? null : includeCurrentPlayer(total, correctCount, currentCorrect)));
       } else {
-        // seasonLeader - use careerPath stats for now (or create new function later)
+        // careerPath, or any Super Bowl type: use career-path stats as fallback
         getCareerPathCorrectPctToday().then(({ total, correct: correctCount, error }) =>
           setQuestionCorrectPct(error ? null : includeCurrentPlayer(total, correctCount, currentCorrect)));
       }
@@ -86,13 +88,13 @@ export function GameScreen({ onEnd }: GameScreenProps) {
 
       const newScore = score + (correct ? 1 : 0);
       const newCorrect = correctCount + (correct ? 1 : 0);
-      const isDraft = current.type === 'draft';
-      const isCollege = current.type === 'college';
-      const isCareerPath = current.type === 'careerPath';
-      const isSeasonLeader = current.type === 'seasonLeader';
+      const isDraft = current.type === 'draft' || current.type === 'superBowlWinner';
+      const isCollege = current.type === 'college' || current.type === 'superBowlMVP';
+      const isCareerPath = current.type === 'careerPath' || current.type === 'superBowlLoser';
+      const isSeasonLeader = current.type === 'seasonLeader' || current.type === 'superBowlCity';
 
       // Store user answer for this question (use ref to avoid stale closure)
-      const userAnswer = isCareerPath ? careerPathGuess : choice;
+      const userAnswer = isCareerPath && current.type === 'careerPath' ? careerPathGuess : choice;
       if (isDraft) userAnswersByTypeRef.current[0] = userAnswer;
       else if (isCollege) userAnswersByTypeRef.current[1] = userAnswer;
       else if (isCareerPath) userAnswersByTypeRef.current[2] = userAnswer;
@@ -120,6 +122,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             userAnswerCollege: finalAnswers[1],
             userAnswerCareerPath: finalAnswers[2],
             userAnswerSeasonLeader: finalAnswers[3],
+            isSuperBowlWeekend: isSuperBowlWeekend || undefined,
           });
         } else {
           setCorrectByType((prev) => {
@@ -357,11 +360,27 @@ export function GameScreen({ onEnd }: GameScreenProps) {
               in <span className="text-amber-400">{current.year}</span>?
             </h2>
           </>
-        ) : (
+        ) : current.type === 'superBowlWinner' ? (
+          <h2 className="text-2xl font-bold text-white text-center">
+            Who won <span className="text-amber-400">Super Bowl {current.roman}</span> ({current.year}) vs the {current.loser}?
+          </h2>
+        ) : current.type === 'superBowlMVP' ? (
+          <h2 className="text-2xl font-bold text-white text-center">
+            Who was <span className="text-amber-400">Super Bowl {current.roman}</span> MVP? <span className="text-slate-400 font-normal">({current.winner} vs {current.loser})</span>
+          </h2>
+        ) : current.type === 'superBowlLoser' ? (
+          <h2 className="text-2xl font-bold text-white text-center">
+            Who lost <span className="text-amber-400">Super Bowl {current.roman}</span> ({current.year}) to the {current.winner}?
+          </h2>
+        ) : current.type === 'superBowlCity' ? (
+          <h2 className="text-2xl font-bold text-white text-center">
+            Where was <span className="text-amber-400">Super Bowl {current.roman}</span> ({current.year}) played? <span className="text-slate-400 font-normal">({current.winner} vs {current.loser})</span>
+          </h2>
+        ) : current.type === 'college' ? (
           <h2 className="text-2xl font-bold text-white text-center">
             Which college did <span className="text-amber-400">{current.name}</span> attend?
           </h2>
-        )}
+        ) : null}
 
         {current.type !== 'careerPath' && (
           <div className="grid gap-3">
@@ -388,7 +407,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             })}
           </div>
         )}
-        {answered && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader') && (
+        {answered && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader' || current.type === 'superBowlWinner' || current.type === 'superBowlMVP' || current.type === 'superBowlLoser' || current.type === 'superBowlCity') && (
           <p className="text-slate-500 text-sm text-center mt-3">
             {questionCorrectPct !== null
               ? `${questionCorrectPct}% of players got this question correct.`

@@ -45,25 +45,27 @@ export function LeaderboardScreen({ currentUserId, onBack, onOpenProfile }: Lead
   const [friendIds, setFriendIds] = useState<Set<string>>(new Set());
   const [friendsOnly, setFriendsOnly] = useState(false);
 
+  const loadFriendIds = useCallback(() => {
+    getMyFriendIds().then(({ friendIds: ids }) => {
+      setFriendIds(new Set(ids));
+    });
+  }, []);
+
   const load = useCallback(() => {
     setLoading(true);
     setError(null);
+    // Refetch friend list so it's up to date (e.g. after accepting on profile)
+    loadFriendIds();
     fetchLeaderboard(tab).then(({ rows: r, error: e }) => {
       setRows(r);
       setError(e?.message ?? null);
       setLoading(false);
     });
-  }, [tab]);
+  }, [tab, loadFriendIds]);
 
   useEffect(() => {
     load();
   }, [load]);
-
-  useEffect(() => {
-    getMyFriendIds().then(({ friendIds: ids }) => {
-      setFriendIds(new Set(ids));
-    });
-  }, []);
 
   // No auto-refresh on window focus so the daily leaderboard doesn't "randomly" refresh when switching tabs
 

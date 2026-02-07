@@ -41,6 +41,7 @@ function App() {
           userId={profileUserId}
           currentUserId={user.id}
           onBack={() => { setProfileUserId(null); setScreen('leaderboard'); }}
+          onOpenProfile={(uid) => { setProfileUserId(uid); setScreen('profile'); }}
         />
       </div>
     );

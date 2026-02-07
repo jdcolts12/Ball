@@ -1,5 +1,5 @@
 import { draftClasses } from '../data/drafts';
-import { getLocalDateString } from './dailyPlayLimit';
+import { getPstDateString } from './dailyPlayLimit';
 import { shuffle } from '../utils/shuffle';
 
 export interface DailyDraftQuestion {
@@ -30,7 +30,7 @@ function hashString(s: string): number {
  * all choices are from the same era and equally plausible.
  */
 export function getDailyDraftQuestion(dateString?: string): DailyDraftQuestion {
-  const date = dateString ?? getLocalDateString();
+  const date = dateString ?? getPstDateString();
   const seed = hashString(date);
   const classIndex = seed % draftClasses.length;
   const draft = draftClasses[classIndex];
