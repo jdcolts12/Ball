@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getUserPublicProfile, getUserCareerPercentile, updateMyProfile, uploadAvatar } from '../services/profile';
 import { getFriendshipStatus, sendFriendRequest, acceptFriendRequest, getMyFriendIds, getPendingFriendRequestIds } from '../services/friends';
-import { getCurrentUserWeeklyPct } from '../services/games';
+import { getUserWeeklyPct } from '../services/games';
 import { updateUsername } from '../services/auth';
 import { getCareerPercentageBadges, getStreakBadge } from '../lib/badges';
 import type { UserPublicProfile, ProfileBgColor } from '../types/database';
@@ -70,10 +70,11 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [profileRes, statusRes, percentileRes] = await Promise.all([
+    const [profileRes, statusRes, percentileRes, weeklyRes] = await Promise.all([
       getUserPublicProfile(userId),
       isOwnProfile ? Promise.resolve({ status: null as FriendshipStatus, error: null }) : getFriendshipStatus(userId),
       getUserCareerPercentile(userId),
+      getUserWeeklyPct(userId),
     ]);
     if (profileRes.error) {
       setError(profileRes.error.message);
@@ -92,6 +93,11 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
       setFriendship(statusRes.status ?? null);
     }
     setCareerPercentile(percentileRes.error ? null : percentileRes.percentile ?? null);
+    if (!weeklyRes.error && (weeklyRes.total > 0 || weeklyRes.correct > 0)) {
+      setWeeklyPct({ correct: weeklyRes.correct, total: weeklyRes.total, pct: weeklyRes.pct });
+    } else {
+      setWeeklyPct(null);
+    }
     setLoading(false);
   }, [userId, isOwnProfile]);
 
@@ -124,17 +130,6 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   useEffect(() => {
     loadFriendsAndRequests();
   }, [loadFriendsAndRequests]);
-
-  useEffect(() => {
-    if (!isOwnProfile) return;
-    getCurrentUserWeeklyPct().then((res) => {
-      if (!res.error && (res.total > 0 || res.correct > 0)) {
-        setWeeklyPct({ correct: res.correct, total: res.total, pct: res.pct });
-      } else {
-        setWeeklyPct(null);
-      }
-    });
-  }, [isOwnProfile]);
 
   const handleSendRequest = async () => {
     setActionBusy(true);
@@ -391,16 +386,16 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
           )}
         </div>
 
-        {/* Top X% player (left, career % vs others) + tier Casual/Ball Knower/Historian (right, weekly % only) — right under name, above Stats */}
-        {profile && (careerPercentile != null || (isOwnProfile && weeklyPct !== null && weeklyPct.total > 0)) && (
+        {/* Top X% player (left, only when in top 30% by career %) + tier Casual/Ball Knower/Historian (right, weekly % only) — right under name, above Stats */}
+        {profile && (careerPercentile != null && careerPercentile >= 70 || (weeklyPct !== null && weeklyPct.total > 0)) && (
           <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-5 sm:mb-6">
-            {careerPercentile != null && (
+            {careerPercentile != null && careerPercentile >= 70 && (
               <p className="text-white/90 font-semibold text-sm sm:text-base">
-                Top {Math.max(1, Math.min(100, Math.round(100 - careerPercentile)))}% player
+                Top {Math.max(5, Math.min(30, Math.round((100 - careerPercentile) / 5) * 5))}% player
               </p>
             )}
-            {/* Weekly tier from % only (Casual <60%, Ball Knower 61–80%, Historian 81–100%); do not list the percentage. */}
-            {isOwnProfile && weeklyPct !== null && weeklyPct.total > 0 && (
+            {/* Weekly tier from % only (Casual <60%, Ball Knower 61–80%, Historian 81–100%); do not list the percentage. Shows for every player who played this week. */}
+            {weeklyPct !== null && weeklyPct.total > 0 && (
               <p className="text-white font-bold text-base sm:text-lg">
                 {getBallKnowerTier(weeklyPct.pct).emoji} {getBallKnowerTier(weeklyPct.pct).label}
               </p>

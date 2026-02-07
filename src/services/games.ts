@@ -161,19 +161,27 @@ export async function getCurrentUserWeeklyPct(): Promise<{
   pct: number;
   error: Error | null;
 }> {
-  const { games, error } = await getUserGameHistory();
-  if (error) return { correct: 0, total: 0, pct: 0, error };
-  const { startISO, endISO } = getPSTWeekBoundaries();
-  let correct = 0;
-  let total = 0;
-  for (const g of games) {
-    const at = g.created_at ?? '';
-    if (at >= startISO && at <= endISO) {
-      correct += g.correct_answers ?? 0;
-      total += g.questions_answered ?? 0;
-    }
-  }
-  const pct = total > 0 ? (correct / total) * 100 : 0;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { correct: 0, total: 0, pct: 0, error: new Error('Not authenticated') };
+  return getUserWeeklyPct(user.id);
+}
+
+/**
+ * Get any user's correct % for the current week (Sunday–Saturday PST). For weekly badge on every profile.
+ * Uses RPC get_user_weekly_pct (run supabase/migrations/025_user_weekly_pct.sql or RUN_USER_WEEKLY_PCT.sql).
+ */
+export async function getUserWeeklyPct(userId: string): Promise<{
+  correct: number;
+  total: number;
+  pct: number;
+  error: Error | null;
+}> {
+  const { data, error } = await supabase.rpc('get_user_weekly_pct', { target_user_id: userId });
+  if (error) return { correct: 0, total: 0, pct: 0, error: new Error(error.message) };
+  const row = Array.isArray(data) && data[0] ? data[0] : data;
+  const correct = Number(row?.correct ?? 0);
+  const total = Number(row?.total ?? 0);
+  const pct = total > 0 ? Number(row?.pct ?? 0) : 0;
   return { correct, total, pct, error: null };
 }
 
