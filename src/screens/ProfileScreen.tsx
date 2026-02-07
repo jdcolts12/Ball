@@ -29,17 +29,10 @@ function getProfileBgClass(color: string | null | undefined): string {
   return PROFILE_BG_CLASSES[color ?? 'green'] ?? PROFILE_BG_CLASSES.green;
 }
 
-/** Tier from raw % (used for weekly badge): Casual <60%, Ball Knower 61–80%, Historian 81–100%. */
+/** Tier from weekly % only: Casual <60%, Ball Knower 61–80%, Historian 81–100%. */
 function getBallKnowerTier(pct: number): { emoji: string; label: string } {
   if (pct >= 81) return { emoji: '🐐', label: 'Historian' };
   if (pct >= 61) return { emoji: '🔥', label: 'Ball Knower' };
-  return { emoji: '🧠', label: 'Casual' };
-}
-
-/** Career tier from percentile among users (0–100, 100 = best): bottom third Casual, middle Ball Knower, top Historian. */
-function getBallKnowerTierByPercentile(percentile: number): { emoji: string; label: string } {
-  if (percentile >= 67) return { emoji: '🐐', label: 'Historian' };
-  if (percentile >= 34) return { emoji: '🔥', label: 'Ball Knower' };
   return { emoji: '🧠', label: 'Casual' };
 }
 
@@ -398,27 +391,18 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
           )}
         </div>
 
-        {/* Career line (every profile) + weekly badge (own profile only) — right under name, above Stats */}
-        {profile && (
-          <div className="flex flex-col items-center gap-2 mb-5 sm:mb-6">
-            {careerPercentile != null && careerPercentile >= 60 ? (
-              (() => {
-                const careerTier = getBallKnowerTierByPercentile(careerPercentile);
-                const topPctRounded = Math.max(5, Math.min(40, Math.round((100 - careerPercentile) / 5) * 5));
-                return (
-                  <p className="text-white/90 font-semibold text-sm sm:text-base">
-                    {careerTier.emoji} Top {topPctRounded}% ball knowledge
-                  </p>
-                );
-              })()
-            ) : (
+        {/* Top X% player (left, career % vs others) + tier Casual/Ball Knower/Historian (right, weekly % only) — right under name, above Stats */}
+        {profile && (careerPercentile != null || (isOwnProfile && weeklyPct !== null && weeklyPct.total > 0)) && (
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 mb-5 sm:mb-6">
+            {careerPercentile != null && (
               <p className="text-white/90 font-semibold text-sm sm:text-base">
-                {getBallKnowerTier(profile.career_pct).emoji} {getBallKnowerTier(profile.career_pct).label} · {Math.round(profile.career_pct)}%
+                Top {Math.max(1, Math.min(100, Math.round(100 - careerPercentile)))}% player
               </p>
             )}
+            {/* Weekly tier from % only (Casual <60%, Ball Knower 61–80%, Historian 81–100%); do not list the percentage. */}
             {isOwnProfile && weeklyPct !== null && weeklyPct.total > 0 && (
               <p className="text-white font-bold text-base sm:text-lg">
-                This week: {getBallKnowerTier(weeklyPct.pct).emoji} {getBallKnowerTier(weeklyPct.pct).label}
+                {getBallKnowerTier(weeklyPct.pct).emoji} {getBallKnowerTier(weeklyPct.pct).label}
               </p>
             )}
           </div>
