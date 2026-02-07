@@ -398,18 +398,24 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
           )}
         </div>
 
-        {/* Top X% ball knowledge (only when percentile applies) + weekly badge — right under name, above Stats */}
-        {profile && (careerPercentile != null && careerPercentile >= 60 || (isOwnProfile && weeklyPct !== null && weeklyPct.total > 0)) && (
+        {/* Career line (every profile) + weekly badge (own profile only) — right under name, above Stats */}
+        {profile && (
           <div className="flex flex-col items-center gap-2 mb-5 sm:mb-6">
-            {careerPercentile != null && careerPercentile >= 60 && (() => {
-              const careerTier = getBallKnowerTierByPercentile(careerPercentile);
-              const topPctRounded = Math.max(5, Math.min(40, Math.round((100 - careerPercentile) / 5) * 5));
-              return (
-                <p className="text-white/90 font-semibold text-sm sm:text-base">
-                  {careerTier.emoji} Top {topPctRounded}% ball knowledge
-                </p>
-              );
-            })()}
+            {careerPercentile != null && careerPercentile >= 60 ? (
+              (() => {
+                const careerTier = getBallKnowerTierByPercentile(careerPercentile);
+                const topPctRounded = Math.max(5, Math.min(40, Math.round((100 - careerPercentile) / 5) * 5));
+                return (
+                  <p className="text-white/90 font-semibold text-sm sm:text-base">
+                    {careerTier.emoji} Top {topPctRounded}% ball knowledge
+                  </p>
+                );
+              })()
+            ) : (
+              <p className="text-white/90 font-semibold text-sm sm:text-base">
+                {getBallKnowerTier(profile.career_pct).emoji} {getBallKnowerTier(profile.career_pct).label} · {Math.round(profile.career_pct)}%
+              </p>
+            )}
             {isOwnProfile && weeklyPct !== null && weeklyPct.total > 0 && (
               <p className="text-white font-bold text-base sm:text-lg">
                 This week: {getBallKnowerTier(weeklyPct.pct).emoji} {getBallKnowerTier(weeklyPct.pct).label}
