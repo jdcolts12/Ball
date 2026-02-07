@@ -18,3 +18,6 @@ as $$
 $$;
 
 comment on function public.get_todays_game() is 'Returns the current user''s most recent game from today (PST). Used for Today''s Stats screen.';
+
+grant execute on function public.get_todays_game() to authenticated;
+grant execute on function public.get_todays_game() to anon;

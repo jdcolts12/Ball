@@ -186,7 +186,7 @@ export async function getUserWeeklyPct(userId: string): Promise<{
 
 /**
  * Fetch today's game for the current user (most recent game from today, PST).
- * Uses server RPC so "today" matches get_daily_leaderboard and has_played_today—no client date math.
+ * Prefers server RPC get_todays_game(); falls back to client date query if RPC fails (e.g. missing grant).
  */
 export async function getTodaysGame(): Promise<{ game: Game | null; error: Error | null }> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -196,11 +196,27 @@ export async function getTodaysGame(): Promise<{ game: Game | null; error: Error
 
   const { data, error } = await supabase.rpc('get_todays_game');
 
-  if (error) {
-    return { game: null, error: new Error(error.message) };
+  if (!error && data != null) {
+    const game = Array.isArray(data) && data.length > 0 ? (data[0] as Game) : null;
+    return { game, error: null };
   }
-  const game = Array.isArray(data) && data.length > 0 ? (data[0] as Game) : null;
-  return { game, error: null };
+
+  // Fallback: RPC missing or permission denied — use client PST date query
+  const { startISO, endISO } = getPSTDateBoundaries();
+  const { data: row, error: queryError } = await supabase
+    .from('games')
+    .select('*')
+    .eq('user_id', user.id)
+    .gte('created_at', startISO)
+    .lte('created_at', endISO)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (queryError) {
+    return { game: null, error: new Error(queryError.message) };
+  }
+  return { game: row as Game | null, error: null };
 }
 
 /**
