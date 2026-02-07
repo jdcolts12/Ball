@@ -6,8 +6,8 @@ import { NFC_TEAMS } from '../data/superBowlFacts';
 import { getPstDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
 
-/** Super Bowl weekend 2026: themed questions on Saturday & Sunday of SB LX. Also today (Jan 30) for rollout. */
-const SUPER_BOWL_WEEKEND_DATES = ['2026-01-30', '2026-02-07', '2026-02-08'];
+/** Super Bowl Saturday 2/7/26 only. Sunday 2/8 will have separate questions (TBD). */
+const SUPER_BOWL_WEEKEND_DATES = ['2026-02-07'];
 
 export function isSuperBowlWeekendDate(dateString: string): boolean {
   return SUPER_BOWL_WEEKEND_DATES.includes(dateString);
