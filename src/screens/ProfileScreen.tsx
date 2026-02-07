@@ -77,9 +77,10 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const [profileRes, statusRes] = await Promise.all([
+    const [profileRes, statusRes, percentileRes] = await Promise.all([
       getUserPublicProfile(userId),
       isOwnProfile ? Promise.resolve({ status: null as FriendshipStatus, error: null }) : getFriendshipStatus(userId),
+      getUserCareerPercentile(userId),
     ]);
     if (profileRes.error) {
       setError(profileRes.error.message);
