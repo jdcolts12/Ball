@@ -51,6 +51,9 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
     async function fetchTodaysGame() {
       setLoading(true);
       const { game, error } = await getTodaysGame();
+      if (error) {
+        console.error('Daily stats: failed to load today\'s game', error);
+      }
       if (!error && game) {
         setTodaysGame(game);
       }
@@ -222,7 +225,7 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
             </div>
           </div>
         ) : (
-          <p className="text-white/70">No game data available</p>
+          <p className="text-white/70">Today&apos;s game data isn&apos;t available. Your score was still recorded—check the leaderboard.</p>
         )}
         
         <p className="text-white text-xl font-semibold">

@@ -140,7 +140,9 @@ function App() {
               userAnswerSeasonLeader: breakdown.userAnswerSeasonLeader,
             })
               .then(() => recordPlay())
-              .catch(() => {});
+              .catch((err) => {
+                console.error('Failed to save game (daily stats may not show):', err);
+              });
           }
         }}
       />

@@ -72,37 +72,36 @@ export async function getCurrentStats(): Promise<{ stats: Stats | null; error: E
 /**
  * Get PST date boundaries (start and end of day) as ISO strings.
  * Handles both PST (UTC-8) and PDT (UTC-7) automatically by detecting DST.
+ * Uses formatToParts so we get year/month/day regardless of locale date format.
  */
 function getPSTDateBoundaries(): { startISO: string; endISO: string } {
-  // Get current date in PST/PDT
   const now = new Date();
-  const dateFormatter = new Intl.DateTimeFormat('en-CA', {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Los_Angeles',
     year: 'numeric',
     month: '2-digit',
-    day: '2-digit'
+    day: '2-digit',
   });
-  
-  const pstDate = dateFormatter.format(now); // YYYY-MM-DD format
-  const [year, month, day] = pstDate.split('-').map(Number);
-  
-  // Determine if DST is in effect by checking what time UTC noon is in PST
-  // If UTC noon is 4am PST, it's PST (-08:00); if 5am PDT, it's PDT (-07:00)
+  const parts = formatter.formatToParts(now);
+  const year = parseInt(parts.find((p) => p.type === 'year')?.value ?? '0', 10);
+  const month = parseInt(parts.find((p) => p.type === 'month')?.value ?? '1', 10);
+  const day = parseInt(parts.find((p) => p.type === 'day')?.value ?? '1', 10);
+
+  // Determine if DST is in effect (PST -08:00 vs PDT -07:00)
   const utcNoon = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-  const pstHour = parseInt(utcNoon.toLocaleString('en-US', {
-    timeZone: 'America/Los_Angeles',
-    hour: '2-digit',
-    hour12: false
-  }));
-  
-  // UTC noon = 4am PST means offset is -8; UTC noon = 5am PDT means offset is -7
+  const pstHour = parseInt(
+    utcNoon.toLocaleString('en-US', {
+      timeZone: 'America/Los_Angeles',
+      hour: '2-digit',
+      hour12: false,
+    })
+  );
   const offset = pstHour === 4 ? '-08:00' : '-07:00';
-  
-  // Create ISO strings for PST midnight and end of day
+
   const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
   const startISO = new Date(`${dateStr}T00:00:00${offset}`).toISOString();
   const endISO = new Date(`${dateStr}T23:59:59.999${offset}`).toISOString();
-  
+
   return { startISO, endISO };
 }
 
@@ -186,9 +185,8 @@ export async function getUserWeeklyPct(userId: string): Promise<{
 }
 
 /**
- * Fetch today's game for the current user (most recent game created today, PST timezone).
- * Uses PST midnight → PST end-of-day converted to ISO for UTC comparison.
- * This matches the SQL functions which use PST timezone.
+ * Fetch today's game for the current user (most recent game from today, PST).
+ * Uses server RPC so "today" matches get_daily_leaderboard and has_played_today—no client date math.
  */
 export async function getTodaysGame(): Promise<{ game: Game | null; error: Error | null }> {
   const { data: { user } } = await supabase.auth.getUser();
@@ -196,22 +194,13 @@ export async function getTodaysGame(): Promise<{ game: Game | null; error: Error
     return { game: null, error: new Error('Not authenticated') };
   }
 
-  const { startISO, endISO } = getPSTDateBoundaries();
-
-  const { data, error } = await supabase
-    .from('games')
-    .select('*')
-    .eq('user_id', user.id)
-    .gte('created_at', startISO)
-    .lte('created_at', endISO)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc('get_todays_game');
 
   if (error) {
     return { game: null, error: new Error(error.message) };
   }
-  return { game: data as Game | null, error: null };
+  const game = Array.isArray(data) && data.length > 0 ? (data[0] as Game) : null;
+  return { game, error: null };
 }
 
 /**
