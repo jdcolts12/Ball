@@ -40,8 +40,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [answered, setAnswered] = useState(false);
   /** For career path: fill-in-the-blank guess. */
   const [careerPathGuess, setCareerPathGuess] = useState('');
-  /** For Patriots MVP count (Q4): fill-in-the-blank. */
-  const [patriotsMvpGuess, setPatriotsMvpGuess] = useState('');
+  /** For SB Q3 (losing team MVP count): fill-in-the-blank. */
+  const [superBowlFillInGuess, setSuperBowlFillInGuess] = useState('');
   /** After answering: % of players who got today's version of this question correct (0–100). */
   const [questionCorrectPct, setQuestionCorrectPct] = useState<number | null>(null);
   /** Timer countdown in seconds (30 seconds per question) */
@@ -90,13 +90,13 @@ export function GameScreen({ onEnd }: GameScreenProps) {
 
       const newScore = score + (correct ? 1 : 0);
       const newCorrect = correctCount + (correct ? 1 : 0);
-      const isDraft = current.type === 'draft' || current.type === 'superBowlBearsNFC';
-      const isCollege = current.type === 'college' || current.type === 'superBowlWRMVPCount';
-      const isCareerPath = current.type === 'careerPath' || current.type === 'superBowlRushingRecord';
-      const isSeasonLeader = current.type === 'seasonLeader' || current.type === 'superBowlPatriotsMVPCount';
+      const isDraft = current.type === 'draft' || current.type === 'superBowlFirstWinner';
+      const isCollege = current.type === 'college' || current.type === 'superBowlLastDefensiveMVP';
+      const isCareerPath = current.type === 'careerPath' || current.type === 'superBowlLosingTeamMVPCount';
+      const isSeasonLeader = current.type === 'seasonLeader' || current.type === 'superBowlLIIMVP';
 
       // Store user answer for this question (use ref to avoid stale closure)
-      const userAnswer = isCareerPath && current.type === 'careerPath' ? careerPathGuess : choice;
+      const userAnswer = (isCareerPath && current.type === 'careerPath') ? careerPathGuess : (current.type === 'superBowlLosingTeamMVPCount' ? superBowlFillInGuess : choice);
       if (isDraft) userAnswersByTypeRef.current[0] = userAnswer;
       else if (isCollege) userAnswersByTypeRef.current[1] = userAnswer;
       else if (isCareerPath) userAnswersByTypeRef.current[2] = userAnswer;
@@ -139,7 +139,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           setSelected(null);
           setAnswered(false);
           setCareerPathGuess('');
-          setPatriotsMvpGuess('');
+          setSuperBowlFillInGuess('');
           setQuestionCorrectPct(null);
           setTimeRemaining(30); // Reset timer for next question
         }
@@ -154,11 +154,11 @@ export function GameScreen({ onEnd }: GameScreenProps) {
     handleAnswer(guess);
   }, [careerPathGuess, handleAnswer]);
 
-  const handlePatriotsMvpSubmit = useCallback(() => {
-    const guess = patriotsMvpGuess.trim();
+  const handleSuperBowlFillInSubmit = useCallback(() => {
+    const guess = superBowlFillInGuess.trim();
     if (guess === '') return;
     handleAnswer(guess);
-  }, [patriotsMvpGuess, handleAnswer]);
+  }, [superBowlFillInGuess, handleAnswer]);
 
   // Timer effect: countdown and auto-answer when expired
   useEffect(() => {
@@ -189,9 +189,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             timerIntervalRef.current = null;
           }
           // For timeout, we need to provide a wrong answer
-          // For draft/college/seasonLeader: pick first wrong option
-          // For careerPath: use empty string (will be wrong)
-          const wrongAnswer = currentQuestion.type === 'careerPath' ? '' : currentOptions.find(opt => opt !== currentCorrectAnswer) || currentOptions[0];
+          // For careerPath / SB fill-in: use empty string (will be wrong)
+          const wrongAnswer = (currentQuestion.type === 'careerPath' || currentQuestion.type === 'superBowlLosingTeamMVPCount') ? '' : currentOptions.find(opt => opt !== currentCorrectAnswer) || currentOptions[0];
           handleAnswer(wrongAnswer, true);
           return 0;
         }
@@ -369,21 +368,21 @@ export function GameScreen({ onEnd }: GameScreenProps) {
               in <span className="text-amber-400">{current.year}</span>?
             </h2>
           </>
-        ) : current.type === 'superBowlBearsNFC' ? (
+        ) : current.type === 'superBowlFirstWinner' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            Who did the Bears beat in the NFC Championship to get to <span className="text-amber-400">Super Bowl XLI</span>?
+            What team won the first ever Super Bowl?
           </h2>
-        ) : current.type === 'superBowlWRMVPCount' ? (
+        ) : current.type === 'superBowlLastDefensiveMVP' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            How many wide receivers have won Super Bowl MVP?
+            Who&apos;s the last defensive player to win Super Bowl MVP?
           </h2>
-        ) : current.type === 'superBowlRushingRecord' ? (
+        ) : current.type === 'superBowlLosingTeamMVPCount' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            Who is the all-time leading rusher in a single Super Bowl?
+            How many losing teams have had a Super Bowl MVP?
           </h2>
-        ) : current.type === 'superBowlPatriotsMVPCount' ? (
+        ) : current.type === 'superBowlLIIMVP' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            How many Patriots <span className="text-slate-400 font-normal">not named Tom Brady</span> have won Super Bowl MVP?
+            Who won Super Bowl MVP of <span className="text-amber-400">Super Bowl LII</span> <span className="text-slate-400 font-normal">(Eagles vs Patriots)</span>?
           </h2>
         ) : current.type === 'college' ? (
           <h2 className="text-2xl font-bold text-white text-center">
@@ -453,7 +452,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             })}
           </div>
         )}
-        {answered && current.type !== 'superBowlPatriotsMVPCount' && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader' || current.type === 'superBowlBearsNFC' || current.type === 'superBowlWRMVPCount' || current.type === 'superBowlRushingRecord') && (
+        {answered && current.type !== 'superBowlLosingTeamMVPCount' && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader' || current.type === 'superBowlFirstWinner' || current.type === 'superBowlLastDefensiveMVP' || current.type === 'superBowlLIIMVP') && (
           <p className="text-slate-500 text-sm text-center mt-3">
             {questionCorrectPct !== null
               ? `${questionCorrectPct}% of players got this question correct.`

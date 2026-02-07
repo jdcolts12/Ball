@@ -123,12 +123,12 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
             <div className="pt-4 border-t border-white/20">
               <div className="text-sm font-semibold text-white/90 mb-3">Question Breakdown:</div>
               <div className="space-y-4 text-left">
-                {(questions[0]?.type === 'draft' || questions[0]?.type === 'superBowlBearsNFC') && (
+                {(questions[0]?.type === 'draft' || questions[0]?.type === 'superBowlFirstWinner') && (
                   <div>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1">
                         <div className="text-white font-semibold text-sm">
-                          {questions[0].type === 'superBowlBearsNFC' ? 'Who did the Bears beat in the NFC Championship to get to Super Bowl XLI?' : questions[0].type === 'draft' ? `${questions[0].year} NFL Draft` : ''}
+                          {questions[0].type === 'superBowlFirstWinner' ? 'What team won the first ever Super Bowl?' : questions[0].type === 'draft' ? `${questions[0].year} NFL Draft` : ''}
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
                           Your answer: <span className={todaysGame.correct_draft ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_draft || '—'}</span>
@@ -143,18 +143,18 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
                     </div>
                   </div>
                 )}
-                {(questions[1]?.type === 'college' || questions[1]?.type === 'superBowlWRMVPCount') && (
+                {(questions[1]?.type === 'college' || questions[1]?.type === 'superBowlLastDefensiveMVP') && (
                   <div>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1">
                         <div className="text-white font-semibold text-sm">
-                          {questions[1].type === 'superBowlWRMVPCount' ? 'How many wide receivers have won Super Bowl MVP?' : questions[1].type === 'college' ? `Which college did ${questions[1].name} attend?` : ''}
+                          {questions[1].type === 'superBowlLastDefensiveMVP' ? "Who's the last defensive player to win Super Bowl MVP?" : questions[1].type === 'college' ? `Which college did ${questions[1].name} attend?` : ''}
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
                           Your answer: <span className={todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}>{todaysGame.user_answer_college || '—'}</span>
                         </div>
                         <div className="text-white/70 text-xs mt-0.5">
-                          Correct: {questions[1].type === 'superBowlWRMVPCount' ? questions[1].correctAnswer : questions[1].type === 'college' ? questions[1].college : ''}
+                          Correct: {questions[1].type === 'superBowlLastDefensiveMVP' ? questions[1].correctAnswer : questions[1].type === 'college' ? questions[1].college : ''}
                         </div>
                       </div>
                       <span className={`font-bold ml-2 ${todaysGame.correct_college ? 'text-green-300' : 'text-red-300'}`}>
@@ -163,12 +163,12 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
                     </div>
                   </div>
                 )}
-                {(questions[2]?.type === 'careerPath' || questions[2]?.type === 'superBowlRushingRecord') && (
+                {(questions[2]?.type === 'careerPath' || questions[2]?.type === 'superBowlLosingTeamMVPCount') && (
                   <div>
                     <div className="flex items-start justify-between mb-1">
                       <div className="flex-1">
                         <div className="text-white font-semibold text-sm">
-                          {questions[2].type === 'superBowlRushingRecord' ? 'Who is the all-time leading rusher in a single Super Bowl?' : questions[2].type === 'careerPath' ? `Guess the ${questions[2].position} by career path` : ''}
+                          {questions[2].type === 'superBowlLosingTeamMVPCount' ? 'How many losing teams have had a Super Bowl MVP?' : questions[2].type === 'careerPath' ? `Guess the ${questions[2].position} by career path` : ''}
                         </div>
                         {questions[2].type === 'careerPath' && (
                           <div className="text-white/70 text-xs mt-0.5">
@@ -188,12 +188,12 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
                     </div>
                   </div>
                 )}
-                {(questions[3]?.type === 'seasonLeader' || questions[3]?.type === 'superBowlPatriotsMVPCount') && (() => {
+                {(questions[3]?.type === 'seasonLeader' || questions[3]?.type === 'superBowlLIIMVP') && (() => {
                   const otherThreeCorrect = (todaysGame.correct_draft ? 1 : 0) + (todaysGame.correct_college ? 1 : 0) + (todaysGame.correct_career_path ? 1 : 0);
                   const seasonLeaderCorrect = todaysGame.correct_answers > otherThreeCorrect;
                   const q3 = questions[3];
-                  const label = q3.type === 'superBowlPatriotsMVPCount'
-                    ? 'How many Patriots not named Tom Brady have won Super Bowl MVP?'
+                  const label = q3.type === 'superBowlLIIMVP'
+                    ? 'Who won Super Bowl MVP of Super Bowl LII (Eagles vs Patriots)?'
                     : q3.type === 'seasonLeader'
                       ? `Who led the NFL in ${q3.category === 'passingTDs' ? 'passing touchdowns' : q3.category === 'rushingTDs' ? 'rushing touchdowns' : q3.category === 'receivingTDs' ? 'receiving touchdowns' : q3.category === 'sacks' ? 'sacks' : q3.category === 'interceptions' ? 'interceptions' : q3.category === 'passing' ? 'passing yards' : q3.category === 'rushing' ? 'rushing yards' : 'receiving yards'} in ${q3.year}?`
                       : '';

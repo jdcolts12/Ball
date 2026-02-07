@@ -2,12 +2,12 @@ import type { PlayerQuestion } from '../data/players';
 import { players } from '../data/players';
 import { careerPathPlayers } from '../data/careerPathPlayers';
 import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
-import { NFC_TEAMS } from '../data/superBowlFacts';
 import { getPstDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
 
-/** Super Bowl Saturday 2/7/26 only. Sunday 2/8 will have separate questions (TBD). */
-const SUPER_BOWL_WEEKEND_DATES = ['2026-02-07'];
+/** Saturday 2/7/26: Super Bowl questions. Sunday 2/8/26: tomorrow's questions (same set for now; separate Sunday set TBD). Monday 2/9+ = regular. */
+const SUPER_BOWL_SATURDAY = '2026-02-07';
+const SUPER_BOWL_SUNDAY = '2026-02-08';
 
 /** Normalize to YYYY-MM-DD so we match even if getPstDateString returns single-digit month/day. */
 function normalizePstDate(s: string): string {
@@ -17,7 +17,8 @@ function normalizePstDate(s: string): string {
 }
 
 export function isSuperBowlWeekendDate(dateString: string): boolean {
-  return SUPER_BOWL_WEEKEND_DATES.includes(normalizePstDate(dateString));
+  const d = normalizePstDate(dateString);
+  return d === SUPER_BOWL_SATURDAY || d === SUPER_BOWL_SUNDAY;
 }
 
 export type CollegeQuestion = {
@@ -59,10 +60,10 @@ export type SeasonLeaderQuestion = {
 };
 
 export type SuperBowlQuestionKind =
-  | 'superBowlBearsNFC'
-  | 'superBowlWRMVPCount'
-  | 'superBowlRushingRecord'
-  | 'superBowlPatriotsMVPCount';
+  | 'superBowlFirstWinner'
+  | 'superBowlLastDefensiveMVP'
+  | 'superBowlLosingTeamMVPCount'
+  | 'superBowlLIIMVP';
 
 export type SuperBowlQuestion = {
   type: SuperBowlQuestionKind;
@@ -101,35 +102,36 @@ function getSuperBowlQuestions(date: string): GameQuestion[] {
     return doShuffle(rest).slice(0, n) as T[];
   };
 
-  // Q1: Who did the Bears beat in the NFC Championship to get to Super Bowl XLI? Answer: Saints. Wrong: other NFC teams.
-  const bearsCorrect = 'Saints';
-  const bearsWrongPool = NFC_TEAMS.filter((t) => t !== bearsCorrect);
-  const bearsOptions = doShuffle([bearsCorrect, ...pickWrong(bearsWrongPool, bearsCorrect, 3)]) as [string, string, string, string];
+  // Q1: What team won the first ever Super Bowl? Answer: Packers (SB I). Wrong: Chiefs, Jets, Cowboys.
+  const firstWinnerCorrect = 'Packers';
+  const firstWinnerWrong = ['Chiefs', 'Jets', 'Cowboys'];
+  const firstWinnerOptions = doShuffle([firstWinnerCorrect, ...firstWinnerWrong]) as [string, string, string, string];
 
-  // Q2: How many WRs have won Super Bowl MVP? Answer: 8.
-  const wrMvpCorrect = '8';
-  const wrMvpOptions = doShuffle([wrMvpCorrect, ...pickWrong(['5', '6', '7', '9'], wrMvpCorrect, 3)]) as [string, string, string, string];
+  // Q2: Who's the last defensive player to win Super Bowl MVP? Answer: Von Miller (SB 50).
+  const lastDefMvpCorrect = 'Von Miller';
+  const lastDefMvpWrongPool = ['Ray Lewis', 'Dexter Jackson', 'Malcolm Smith', 'Chuck Howley'].filter((x) => x !== lastDefMvpCorrect);
+  const lastDefMvpOptions = doShuffle([lastDefMvpCorrect, ...pickWrong(lastDefMvpWrongPool, lastDefMvpCorrect, 3)]) as [string, string, string, string];
 
-  // Q3: All-time leading rusher in a single Super Bowl. Answer: Tim Smith (204 yards, SB XXII). Options: names only, no yardage.
-  const rushingCorrect = 'Tim Smith';
-  const rushingWrongPool = ['Marcus Allen', 'Larry Csonka', 'John Riggins', 'Terrell Davis', 'Emmitt Smith'].filter((x) => x !== rushingCorrect);
-  const rushingOptions = doShuffle([rushingCorrect, ...pickWrong(rushingWrongPool, rushingCorrect, 3)]) as [string, string, string, string];
+  // Q3: How many losing teams have had a Super Bowl MVP? Answer: 1 (Chuck Howley, Cowboys, SB V). Fill-in-the-blank.
+  const losingTeamMvpCorrect = '1';
+  const losingTeamMvpOptions = [losingTeamMvpCorrect, '', '', ''] as [string, string, string, string]; // unused; Q3 is fill-in
 
-  // Q4: How many Patriots not named Tom Brady have won Super Bowl MVP? Answer: 2 (Deion Branch XXXIX, Julian Edelman LIII). Fill-in-the-blank.
-  const patsCorrect = '2';
-  const patsOptions = [patsCorrect, '', '', ''] as [string, string, string, string]; // unused; Q4 is fill-in
+  // Q4: Who won Super Bowl MVP of Super Bowl LII (Eagles vs Patriots)? Answer: Nick Foles.
+  const liiMvpCorrect = 'Nick Foles';
+  const liiMvpWrongPool = ['Tom Brady', 'Zach Ertz', 'LeGarrette Blount', 'Alshon Jeffery'].filter((x) => x !== liiMvpCorrect);
+  const liiMvpOptions = doShuffle([liiMvpCorrect, ...pickWrong(liiMvpWrongPool, liiMvpCorrect, 3)]) as [string, string, string, string];
 
   return [
-    { type: 'superBowlBearsNFC', correctAnswer: bearsCorrect, options: bearsOptions },
-    { type: 'superBowlWRMVPCount', correctAnswer: wrMvpCorrect, options: wrMvpOptions },
-    { type: 'superBowlRushingRecord', correctAnswer: rushingCorrect, options: rushingOptions },
-    { type: 'superBowlPatriotsMVPCount', correctAnswer: patsCorrect, options: patsOptions },
+    { type: 'superBowlFirstWinner', correctAnswer: firstWinnerCorrect, options: firstWinnerOptions },
+    { type: 'superBowlLastDefensiveMVP', correctAnswer: lastDefMvpCorrect, options: lastDefMvpOptions },
+    { type: 'superBowlLosingTeamMVPCount', correctAnswer: losingTeamMvpCorrect, options: losingTeamMvpOptions },
+    { type: 'superBowlLIIMVP', correctAnswer: liiMvpCorrect, options: liiMvpOptions },
   ];
 }
 
 /**
  * Returns the same 4 questions for everyone on the same calendar day:
- * On Super Bowl weekend: 4 fixed Super Bowl questions (Bears XLI NFC, WR MVP count, rushing record, Patriots non-Brady MVP count).
+ * On Super Bowl weekend: 4 fixed Super Bowl questions (first SB winner, last defensive MVP, losing-team MVP count fill-in, SB LII MVP).
  * Otherwise: 1 draft + 1 college + 1 career path + 1 season leader.
  */
 export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
