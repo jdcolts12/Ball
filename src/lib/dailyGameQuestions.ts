@@ -5,7 +5,7 @@ import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
 import { getPstDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
 
-/** Saturday 2/7/26: Super Bowl questions. Sunday 2/8/26: tomorrow's questions (same set for now; separate Sunday set TBD). Monday 2/9+ = regular. */
+/** Saturday 2/7/26: original SB set. Sunday 2/8/26: new set — goes live at midnight PST. Monday 2/9+ = regular. */
 const SUPER_BOWL_SATURDAY = '2026-02-07';
 const SUPER_BOWL_SUNDAY = '2026-02-08';
 
@@ -60,6 +60,10 @@ export type SeasonLeaderQuestion = {
 };
 
 export type SuperBowlQuestionKind =
+  | 'superBowlBearsNFC'
+  | 'superBowlWRMVPCount'
+  | 'superBowlRushingRecord'
+  | 'superBowlPatriotsMVPCount'
   | 'superBowlFirstWinner'
   | 'superBowlLastDefensiveMVP'
   | 'superBowlLosingTeamMVPCount'
@@ -94,7 +98,33 @@ const shuffle = (date: string) => <T>(arr: T[]): T[] => {
   return out;
 };
 
-function getSuperBowlQuestions(date: string): GameQuestion[] {
+/** Saturday 2/7 only: original Super Bowl questions (Bears XLI, WR MVP count, Tim Smith rushing, Patriots non-Brady MVP fill-in). */
+function getSuperBowlSaturdayQuestions(date: string): GameQuestion[] {
+  const doShuffle = shuffle(date);
+  const pickWrong = <T>(pool: T[], correct: T, n: number): T[] => {
+    const rest = [...new Set(pool.filter((x) => x !== correct))];
+    return doShuffle(rest).slice(0, n) as T[];
+  };
+  const bearsCorrect = 'Saints';
+  const bearsWrongPool = NFC_TEAMS.filter((t) => t !== bearsCorrect);
+  const bearsOptions = doShuffle([bearsCorrect, ...pickWrong(bearsWrongPool, bearsCorrect, 3)]) as [string, string, string, string];
+  const wrMvpCorrect = '8';
+  const wrMvpOptions = doShuffle([wrMvpCorrect, ...pickWrong(['5', '6', '7', '9'], wrMvpCorrect, 3)]) as [string, string, string, string];
+  const rushingCorrect = 'Tim Smith';
+  const rushingWrongPool = ['Marcus Allen', 'Larry Csonka', 'John Riggins', 'Terrell Davis', 'Emmitt Smith'].filter((x) => x !== rushingCorrect);
+  const rushingOptions = doShuffle([rushingCorrect, ...pickWrong(rushingWrongPool, rushingCorrect, 3)]) as [string, string, string, string];
+  const patsCorrect = '2';
+  const patsOptions = [patsCorrect, '', '', ''] as [string, string, string, string];
+  return [
+    { type: 'superBowlBearsNFC', correctAnswer: bearsCorrect, options: bearsOptions },
+    { type: 'superBowlWRMVPCount', correctAnswer: wrMvpCorrect, options: wrMvpOptions },
+    { type: 'superBowlRushingRecord', correctAnswer: rushingCorrect, options: rushingOptions },
+    { type: 'superBowlPatriotsMVPCount', correctAnswer: patsCorrect, options: patsOptions },
+  ];
+}
+
+/** Sunday 2/8 only: new Super Bowl questions (first SB winner, last defensive MVP, losing-team MVP count fill-in, SB LII MVP). */
+function getSuperBowlSundayQuestions(date: string): GameQuestion[] {
   const doShuffle = shuffle(date);
 
   const pickWrong = <T>(pool: T[], correct: T, n: number): T[] => {
@@ -130,13 +160,16 @@ function getSuperBowlQuestions(date: string): GameQuestion[] {
 }
 
 /**
- * Returns the same 4 questions for everyone on the same calendar day:
- * On Super Bowl weekend: 4 fixed Super Bowl questions (first SB winner, last defensive MVP, losing-team MVP count fill-in, SB LII MVP).
+ * Returns the same 4 questions for everyone on the same calendar day (PST).
+ * Saturday 2/7: original SB set (Bears XLI, WR MVP, Tim Smith, Patriots fill-in).
+ * Sunday 2/8 (from midnight PST): new SB set (first SB winner, last defensive MVP, losing-team MVP count fill-in, SB LII MVP).
  * Otherwise: 1 draft + 1 college + 1 career path + 1 season leader.
  */
 export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
-  const date = dateString ?? getPstDateString();
-  if (isSuperBowlWeekendDate(date)) return getSuperBowlQuestions(date);
+  const date = dateString ?? getPstDateString(); // PST → new questions go live at midnight Pacific
+  const d = normalizePstDate(date);
+  if (d === SUPER_BOWL_SATURDAY) return getSuperBowlSaturdayQuestions(date);
+  if (d === SUPER_BOWL_SUNDAY) return getSuperBowlSundayQuestions(date);
 
   const draftQ = getDailyDraftQuestion(date);
   const doShuffle = shuffle(date);
