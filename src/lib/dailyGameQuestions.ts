@@ -9,8 +9,15 @@ import { getDailyDraftQuestion } from './dailyDraftQuestion';
 /** Super Bowl Saturday 2/7/26 only. Sunday 2/8 will have separate questions (TBD). */
 const SUPER_BOWL_WEEKEND_DATES = ['2026-02-07'];
 
+/** Normalize to YYYY-MM-DD so we match even if getPstDateString returns single-digit month/day. */
+function normalizePstDate(s: string): string {
+  const m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (!m) return s;
+  return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
+}
+
 export function isSuperBowlWeekendDate(dateString: string): boolean {
-  return SUPER_BOWL_WEEKEND_DATES.includes(dateString);
+  return SUPER_BOWL_WEEKEND_DATES.includes(normalizePstDate(dateString));
 }
 
 export type CollegeQuestion = {
