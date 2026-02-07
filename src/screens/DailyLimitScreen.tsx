@@ -10,9 +10,11 @@ import type { GameQuestion } from '../lib/dailyGameQuestions';
 interface DailyLimitScreenProps {
   currentUserId: string;
   onLeaderboard: () => void;
+  /** Open current user's profile (e.g. "My Profile" button). */
+  onMyProfile?: () => void;
 }
 
-export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScreenProps) {
+export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: DailyLimitScreenProps) {
   const { lastPlayed } = useDailyPlayLimit();
   const [todaysGame, setTodaysGame] = useState<Game | null>(null);
   const [questions, setQuestions] = useState<GameQuestion[]>([]);
@@ -238,7 +240,16 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard }: DailyLimitScr
           </p>
         </div>
         
-        <div className="pt-4">
+        <div className="pt-4 space-y-3">
+          {onMyProfile && (
+            <button
+              type="button"
+              onClick={onMyProfile}
+              className="w-full py-3 bg-white/20 hover:bg-white/30 border-2 border-white/40 text-white font-black text-lg rounded-lg transition-all transform hover:scale-105 active:scale-95 shadow-lg uppercase tracking-wide"
+            >
+              My Profile
+            </button>
+          )}
           <button
             type="button"
             onClick={onLeaderboard}

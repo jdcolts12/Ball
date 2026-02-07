@@ -178,7 +178,9 @@ export function LeaderboardScreen({ currentUserId, onBack, onOpenProfile }: Lead
                   ) : (
                     displayRows.map((r) => {
                       const isFriend = r.userId ? friendIds.has(r.userId) : false;
+                      const isCurrentUser = r.userId === currentUserId;
                       const canOpenProfile = !!r.userId;
+                      const nameClass = isCurrentUser ? 'text-sky-200' : isFriend ? 'text-yellow-300' : 'text-white';
                       return (
                       <tr key={`${r.rank}-${r.userId ?? r.username}-${r.score}`} className="border-b border-white/10">
                         <td className="py-1.5 pr-2 sm:py-2 sm:pr-3 font-black text-yellow-400 align-middle">{r.rank}</td>
@@ -187,12 +189,12 @@ export function LeaderboardScreen({ currentUserId, onBack, onOpenProfile }: Lead
                             <button
                               type="button"
                               onClick={() => onOpenProfile(r.userId!)}
-                              className={`block truncate max-w-[200px] sm:max-w-none text-left w-full hover:underline cursor-pointer ${isFriend ? 'text-yellow-300' : 'text-white'}`}
+                              className={`block truncate max-w-[200px] sm:max-w-none text-left w-full hover:underline cursor-pointer ${nameClass}`}
                             >
                               {r.username}
                             </button>
                           ) : (
-                            <span className={`block truncate max-w-[200px] sm:max-w-none ${isFriend ? 'text-yellow-300' : 'text-white'}`}>
+                            <span className={`block truncate max-w-[200px] sm:max-w-none ${nameClass}`}>
                               {r.username}
                             </span>
                           )}
