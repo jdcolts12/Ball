@@ -250,7 +250,7 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
         />
       </div>
 
-      <div className="relative z-10 flex flex-col max-w-md mx-auto w-full min-w-0 pb-8">
+      <div className="relative z-10 flex flex-col max-w-2xl mx-auto w-full min-w-0 pb-8 px-1 sm:px-0">
         <div className="flex justify-between items-center mb-4 sm:mb-6">
           <h1 className="text-xl font-black text-white">Profile</h1>
           <button
@@ -296,7 +296,7 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
                 placeholder="Username"
                 value={editUsername}
                 onChange={(e) => setEditUsername(e.target.value)}
-                className="w-full max-w-xs px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-3"
+                className="w-full max-w-sm px-3 py-2 rounded-lg bg-white/10 border border-white/30 text-white placeholder-white/50 text-sm mb-3"
               />
               <p className="text-sm text-white/80 mb-1">Background color</p>
               <div className="flex flex-wrap gap-2 justify-center mb-3">
@@ -435,29 +435,29 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
         {/* Stats */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-5 sm:p-6">
           <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-4">Stats</h3>
-          <div className="grid grid-cols-1 gap-1 text-base">
-            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
-              <span className="text-white/80">Games played</span>
-              <span className="font-bold text-white tabular-nums">{profile.total_games}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 text-base">
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
+              <span className="text-white/80 truncate">Games played</span>
+              <span className="font-bold text-white tabular-nums shrink-0">{profile.total_games}</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
-              <span className="text-white/80" title="Consecutive days played in a row (resets if you miss a day). Uses Pacific time.">
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
+              <span className="text-white/80 truncate" title="Consecutive days played in a row (resets if you miss a day). Uses Pacific time.">
                 Game streak
               </span>
-              <span className="font-bold text-white tabular-nums">{profile.consecutive_days_played}</span>
+              <span className="font-bold text-white tabular-nums shrink-0">{profile.consecutive_days_played}</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
-              <span className="text-white/80">Career %</span>
-              <span className="font-bold text-white tabular-nums">{Math.round(profile.career_pct)}%</span>
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
+              <span className="text-white/80 truncate">Career %</span>
+              <span className="font-bold text-white tabular-nums shrink-0">{Math.round(profile.career_pct)}%</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 border-b border-white/10">
-              <span className="text-white/80" title="Number of games where you got every question correct (100% in one round).">
+            <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
+              <span className="text-white/80 truncate" title="Number of games where you got every question correct (100% in one round).">
                 Total perfect games
               </span>
-              <span className="font-bold text-white tabular-nums">{profile.total_perfect_games ?? 0}</span>
+              <span className="font-bold text-white tabular-nums shrink-0">{profile.total_perfect_games ?? 0}</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 gap-4">
-              <span className="text-white/80 text-sm max-w-[8.5rem] leading-tight" title="Best consecutive days with a perfect game (100% in one round).">
+            <div className="flex justify-between items-center py-2.5 gap-2 min-w-0 md:col-span-2">
+              <span className="text-white/80 text-sm leading-tight min-w-0" title="Best consecutive days with a perfect game (100% in one round).">
                 Best perfect game streak
               </span>
               <span className="font-bold text-white tabular-nums shrink-0">{profile.best_perfect_streak}</span>
