@@ -239,7 +239,7 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col p-4 sm:p-6 relative overflow-x-hidden overflow-y-auto`}>
+    <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col p-5 sm:p-8 relative overflow-x-hidden overflow-y-auto`}>
       <div className="absolute inset-0 opacity-10 pointer-events-none min-h-full">
         <div
           className="h-full w-full min-h-full"
@@ -250,20 +250,20 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
         />
       </div>
 
-      <div className="relative z-10 flex flex-col max-w-2xl mx-auto w-full min-w-0 pb-8 px-1 sm:px-0">
-        <div className="flex justify-between items-center mb-4 sm:mb-6">
-          <h1 className="text-xl font-black text-white">Profile</h1>
+      <div className="relative z-10 flex flex-col max-w-4xl mx-auto w-full min-w-0 pb-10 px-2 sm:px-4">
+        <div className="flex justify-between items-center mb-5 sm:mb-8">
+          <h1 className="text-xl sm:text-2xl font-black text-white">Profile</h1>
           <button
             type="button"
             onClick={onBack}
-            className="px-3 py-2 bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-lg text-sm font-semibold"
+            className="px-4 py-2.5 bg-white/10 hover:bg-white/20 border-2 border-white/30 rounded-lg text-sm font-semibold"
           >
             Back
           </button>
         </div>
 
         {/* Avatar + username */}
-        <div className="flex flex-col items-center mb-4 sm:mb-6">
+        <div className="flex flex-col items-center mb-5 sm:mb-8">
           {editing ? (
             <>
               <div className="w-24 h-24 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center mb-3 overflow-hidden">
@@ -433,14 +433,14 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
         )}
 
         {/* Stats */}
-        <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-5 sm:p-6">
-          <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-4">Stats</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-0 text-base">
+        <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-6 sm:p-8">
+          <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-5">Stats</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-0 text-base">
             <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
               <span className="text-white/80 truncate">Games played</span>
               <span className="font-bold text-white tabular-nums shrink-0">{profile.total_games}</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
+            <div className="flex justify-between items-center py-3 border-b border-white/10 gap-3 min-w-0">
               <span className="text-white/80 truncate" title="Consecutive days played in a row (resets if you miss a day). Uses Pacific time.">
                 Game streak
               </span>
@@ -450,13 +450,13 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
               <span className="text-white/80 truncate">Career %</span>
               <span className="font-bold text-white tabular-nums shrink-0">{Math.round(profile.career_pct)}%</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 border-b border-white/10 gap-2 min-w-0">
+            <div className="flex justify-between items-center py-3 border-b border-white/10 gap-3 min-w-0">
               <span className="text-white/80 truncate" title="Number of games where you got every question correct (100% in one round).">
                 Total perfect games
               </span>
               <span className="font-bold text-white tabular-nums shrink-0">{profile.total_perfect_games ?? 0}</span>
             </div>
-            <div className="flex justify-between items-center py-2.5 gap-2 min-w-0 md:col-span-2">
+            <div className="flex justify-between items-center py-3 gap-3 min-w-0 md:col-span-2">
               <span className="text-white/80 text-sm leading-tight min-w-0" title="Best consecutive days with a perfect game (100% in one round).">
                 Best perfect game streak
               </span>
@@ -467,19 +467,19 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
 
         {/* Friends / Requests (own profile only) */}
         {isOwnProfile && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden mb-4 sm:mb-6">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden mb-5 sm:mb-8">
             <div className="flex border-b border-white/20">
               <button
                 type="button"
                 onClick={() => setFriendsTab('friends')}
-                className={`flex-1 py-3 px-4 text-sm font-semibold transition ${friendsTab === 'friends' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+                className={`flex-1 py-3.5 px-5 text-sm font-semibold transition ${friendsTab === 'friends' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
               >
                 Friends
               </button>
               <button
                 type="button"
                 onClick={() => setFriendsTab('requests')}
-                className={`relative flex-1 py-3 px-4 text-sm font-semibold transition ${friendsTab === 'requests' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
+                className={`relative flex-1 py-3.5 px-5 text-sm font-semibold transition ${friendsTab === 'requests' ? 'bg-white/20 text-white' : 'text-white/80 hover:bg-white/10'}`}
               >
                 Requests
                 {pendingProfiles.length > 0 && (
@@ -489,20 +489,20 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
                 )}
               </button>
             </div>
-            <div className="p-3 min-h-[6rem]">
+            <div className="p-4 sm:p-6 min-h-[6rem]">
               {friendsLoading ? (
                 <p className="text-white/70 text-sm text-center py-4">Loading…</p>
               ) : friendsTab === 'friends' ? (
                 friendProfiles.length === 0 ? (
                   <p className="text-white/70 text-sm text-center py-4">No friends yet. Add people from the leaderboard.</p>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul className="space-y-1">
                     {friendProfiles.map((p) => (
                       <li key={p.user_id}>
                         <button
                           type="button"
                           onClick={() => onOpenProfile?.(p.user_id)}
-                          className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/10 text-left"
+                          className="w-full flex items-center gap-4 p-3 rounded-lg hover:bg-white/10 text-left"
                         >
                           <img
                             src={p.avatar_url || DEFAULT_AVATAR}
@@ -519,13 +519,13 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
                 pendingProfiles.length === 0 ? (
                   <p className="text-white/70 text-sm text-center py-4">No pending requests.</p>
                 ) : (
-                  <ul className="space-y-2">
+                  <ul className="space-y-1">
                     {pendingProfiles.map((p) => (
-                      <li key={p.user_id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-white/5">
+                      <li key={p.user_id} className="flex items-center justify-between gap-4 p-3 rounded-lg hover:bg-white/5">
                         <button
                           type="button"
                           onClick={() => onOpenProfile?.(p.user_id)}
-                          className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                          className="flex items-center gap-4 flex-1 min-w-0 text-left"
                         >
                           <img
                             src={p.avatar_url || DEFAULT_AVATAR}
@@ -586,13 +586,13 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
             career90: '90%+ career correct',
           };
           return (
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4 sm:p-6">
-              <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-3">Badges</h3>
-              <div className="flex flex-wrap gap-2 sm:gap-3">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-6 sm:p-8">
+              <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-4">Badges</h3>
+              <div className="flex flex-wrap gap-3 sm:gap-4">
                 {badges.map((b) => (
                   <div
                     key={b.id}
-                    className="inline-flex flex-col items-center gap-0.5 sm:gap-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-white/20 border border-white/30 min-w-0"
+                    className="inline-flex flex-col items-center gap-1 sm:gap-1.5 px-4 sm:px-5 py-3 sm:py-4 rounded-xl bg-white/20 border border-white/30 min-w-0"
                     title={`${BADGE_DESC[b.id as BadgeId] ?? b.label}: ${BADGE_WHY[b.id as BadgeId] ?? ''}`}
                   >
                     <span className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm whitespace-nowrap">
