@@ -239,10 +239,10 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
   }
 
   return (
-    <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col p-6 relative overflow-hidden`}>
-      <div className="absolute inset-0 opacity-10 pointer-events-none">
+    <div className={`min-h-screen bg-gradient-to-b ${bgClass} text-white flex flex-col p-4 sm:p-6 relative overflow-x-hidden overflow-y-auto`}>
+      <div className="absolute inset-0 opacity-10 pointer-events-none min-h-full">
         <div
-          className="h-full w-full"
+          className="h-full w-full min-h-full"
           style={{
             backgroundImage:
               'repeating-linear-gradient(0deg, transparent, transparent 49px, rgba(255,255,255,0.1) 49px, rgba(255,255,255,0.1) 50px)',
@@ -250,8 +250,8 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
         />
       </div>
 
-      <div className="relative z-10 flex flex-col max-w-md mx-auto w-full">
-        <div className="flex justify-between items-center mb-6">
+      <div className="relative z-10 flex flex-col max-w-md mx-auto w-full min-w-0 pb-8">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
           <h1 className="text-xl font-black text-white">Profile</h1>
           <button
             type="button"
@@ -263,7 +263,7 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
         </div>
 
         {/* Avatar + username */}
-        <div className="flex flex-col items-center mb-6">
+        <div className="flex flex-col items-center mb-4 sm:mb-6">
           {editing ? (
             <>
               <div className="w-24 h-24 rounded-full bg-white/20 border-2 border-white/30 flex items-center justify-center mb-3 overflow-hidden">
@@ -467,7 +467,7 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
 
         {/* Friends / Requests (own profile only) */}
         {isOwnProfile && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden">
+          <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 overflow-hidden mb-4 sm:mb-6">
             <div className="flex border-b border-white/20">
               <button
                 type="button"
@@ -586,16 +586,16 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
             career90: '90%+ career correct',
           };
           return (
-            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-5 sm:p-6">
+            <div className="bg-white/10 backdrop-blur-sm rounded-xl border-2 border-white/20 p-4 sm:p-6">
               <h3 className="text-sm font-bold text-white/90 uppercase tracking-wide mb-3">Badges</h3>
-              <div className="flex flex-wrap gap-3">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {badges.map((b) => (
                   <div
                     key={b.id}
-                    className="inline-flex flex-col items-center gap-1 px-4 py-3 rounded-xl bg-white/20 border border-white/30 min-w-[5.5rem]"
+                    className="inline-flex flex-col items-center gap-0.5 sm:gap-1 px-3 sm:px-4 py-2 sm:py-3 rounded-xl bg-white/20 border border-white/30 min-w-0"
                     title={`${BADGE_DESC[b.id as BadgeId] ?? b.label}: ${BADGE_WHY[b.id as BadgeId] ?? ''}`}
                   >
-                    <span className="flex items-center gap-1 text-white font-bold text-sm">
+                    <span className="flex items-center gap-1 text-white font-bold text-xs sm:text-sm whitespace-nowrap">
                       <span>{BADGE_EMOJIS[b.id as BadgeId] ?? '🏅'}</span>
                       {b.id === 'streak' && b.streakCount != null && <span>x{b.streakCount}</span>}
                       <span>{BADGE_LABELS[b.id as BadgeId] ?? b.label}</span>
