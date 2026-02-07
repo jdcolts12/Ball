@@ -40,6 +40,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [answered, setAnswered] = useState(false);
   /** For career path: fill-in-the-blank guess. */
   const [careerPathGuess, setCareerPathGuess] = useState('');
+  /** For Patriots MVP count (Q4): fill-in-the-blank. */
+  const [patriotsMvpGuess, setPatriotsMvpGuess] = useState('');
   /** After answering: % of players who got today's version of this question correct (0–100). */
   const [questionCorrectPct, setQuestionCorrectPct] = useState<number | null>(null);
   /** Timer countdown in seconds (30 seconds per question) */
@@ -88,10 +90,10 @@ export function GameScreen({ onEnd }: GameScreenProps) {
 
       const newScore = score + (correct ? 1 : 0);
       const newCorrect = correctCount + (correct ? 1 : 0);
-      const isDraft = current.type === 'draft' || current.type === 'superBowlWinner';
-      const isCollege = current.type === 'college' || current.type === 'superBowlMVP';
-      const isCareerPath = current.type === 'careerPath' || current.type === 'superBowlLoser';
-      const isSeasonLeader = current.type === 'seasonLeader' || current.type === 'superBowlCity';
+      const isDraft = current.type === 'draft' || current.type === 'superBowlBearsNFC';
+      const isCollege = current.type === 'college' || current.type === 'superBowlWRMVPCount';
+      const isCareerPath = current.type === 'careerPath' || current.type === 'superBowlRushingRecord';
+      const isSeasonLeader = current.type === 'seasonLeader' || current.type === 'superBowlPatriotsMVPCount';
 
       // Store user answer for this question (use ref to avoid stale closure)
       const userAnswer = isCareerPath && current.type === 'careerPath' ? careerPathGuess : choice;
@@ -137,6 +139,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           setSelected(null);
           setAnswered(false);
           setCareerPathGuess('');
+          setPatriotsMvpGuess('');
           setQuestionCorrectPct(null);
           setTimeRemaining(30); // Reset timer for next question
         }
@@ -150,6 +153,12 @@ export function GameScreen({ onEnd }: GameScreenProps) {
     if (!guess) return;
     handleAnswer(guess);
   }, [careerPathGuess, handleAnswer]);
+
+  const handlePatriotsMvpSubmit = useCallback(() => {
+    const guess = patriotsMvpGuess.trim();
+    if (guess === '') return;
+    handleAnswer(guess);
+  }, [patriotsMvpGuess, handleAnswer]);
 
   // Timer effect: countdown and auto-answer when expired
   useEffect(() => {
@@ -360,21 +369,21 @@ export function GameScreen({ onEnd }: GameScreenProps) {
               in <span className="text-amber-400">{current.year}</span>?
             </h2>
           </>
-        ) : current.type === 'superBowlWinner' ? (
+        ) : current.type === 'superBowlBearsNFC' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            Who won <span className="text-amber-400">Super Bowl {current.roman}</span> ({current.year}) vs the {current.loser}?
+            Who did the Bears beat in the NFC Championship to get to <span className="text-amber-400">Super Bowl XLI</span>?
           </h2>
-        ) : current.type === 'superBowlMVP' ? (
+        ) : current.type === 'superBowlWRMVPCount' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            Who was <span className="text-amber-400">Super Bowl {current.roman}</span> MVP? <span className="text-slate-400 font-normal">({current.winner} vs {current.loser})</span>
+            How many wide receivers have won Super Bowl MVP?
           </h2>
-        ) : current.type === 'superBowlLoser' ? (
+        ) : current.type === 'superBowlRushingRecord' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            Who lost <span className="text-amber-400">Super Bowl {current.roman}</span> ({current.year}) to the {current.winner}?
+            Who is the all-time leading rusher in a single Super Bowl?
           </h2>
-        ) : current.type === 'superBowlCity' ? (
+        ) : current.type === 'superBowlPatriotsMVPCount' ? (
           <h2 className="text-2xl font-bold text-white text-center">
-            Where was <span className="text-amber-400">Super Bowl {current.roman}</span> ({current.year}) played? <span className="text-slate-400 font-normal">({current.winner} vs {current.loser})</span>
+            How many Patriots <span className="text-slate-400 font-normal">not named Tom Brady</span> have won Super Bowl MVP?
           </h2>
         ) : current.type === 'college' ? (
           <h2 className="text-2xl font-bold text-white text-center">
@@ -382,7 +391,44 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           </h2>
         ) : null}
 
-        {current.type !== 'careerPath' && (
+        {current.type === 'superBowlPatriotsMVPCount' && !answered && (
+          <div className="flex flex-col gap-2 mt-4">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={patriotsMvpGuess}
+              onChange={(e) => setPatriotsMvpGuess(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={(e) => e.key === 'Enter' && handlePatriotsMvpSubmit()}
+              placeholder="Enter number"
+              className="w-full px-4 py-3 rounded-lg border-2 border-slate-600 bg-slate-800 text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              autoFocus
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              onClick={handlePatriotsMvpSubmit}
+              disabled={patriotsMvpGuess.trim() === ''}
+              className="w-full py-3 rounded-lg font-bold bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Submit
+            </button>
+          </div>
+        )}
+        {current.type === 'superBowlPatriotsMVPCount' && answered && (
+          <div className="mt-4 p-4 rounded-lg border-2 border-slate-600 bg-slate-800 text-center">
+            <p className={selected === correctAnswer ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
+              {selected === correctAnswer ? 'Correct!' : 'Wrong'}
+            </p>
+            {selected !== correctAnswer && (
+              <p className="text-slate-300 mt-1">The answer was <span className="text-amber-400 font-medium">{correctAnswer}</span>.</p>
+            )}
+            <p className="text-slate-500 text-sm mt-2">
+              {questionCorrectPct != null ? `${questionCorrectPct}% of players got this question correct.` : '—% of players got this question correct.'}
+            </p>
+          </div>
+        )}
+
+        {current.type !== 'careerPath' && current.type !== 'superBowlPatriotsMVPCount' && (
           <div className="grid gap-3">
             {options.map((opt) => {
               const isSelected = selected === opt;
@@ -407,7 +453,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             })}
           </div>
         )}
-        {answered && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader' || current.type === 'superBowlWinner' || current.type === 'superBowlMVP' || current.type === 'superBowlLoser' || current.type === 'superBowlCity') && (
+        {answered && current.type !== 'superBowlPatriotsMVPCount' && (current.type === 'draft' || current.type === 'college' || current.type === 'seasonLeader' || current.type === 'superBowlBearsNFC' || current.type === 'superBowlWRMVPCount' || current.type === 'superBowlRushingRecord') && (
           <p className="text-slate-500 text-sm text-center mt-3">
             {questionCorrectPct !== null
               ? `${questionCorrectPct}% of players got this question correct.`

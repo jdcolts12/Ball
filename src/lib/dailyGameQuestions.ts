@@ -2,16 +2,12 @@ import type { PlayerQuestion } from '../data/players';
 import { players } from '../data/players';
 import { careerPathPlayers } from '../data/careerPathPlayers';
 import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
-import { superBowlFacts, superBowlTeamPool, superBowlCityPool } from '../data/superBowlFacts';
+import { NFC_TEAMS } from '../data/superBowlFacts';
 import { getPstDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
 
-/** Super Bowl weekend 2026: themed questions on Saturday & Sunday of SB LX. Update each year if needed. */
-const SUPER_BOWL_WEEKEND_DATES = ['2026-02-07', '2026-02-08'];
-
-/** Super Bowl years to use for weekend questions (inclusive). */
-const SUPER_BOWL_WEEKEND_YEAR_MIN = 1999;
-const SUPER_BOWL_WEEKEND_YEAR_MAX = 2015;
+/** Super Bowl weekend 2026: themed questions on Saturday & Sunday of SB LX. Also today (Jan 30) for rollout. */
+const SUPER_BOWL_WEEKEND_DATES = ['2026-01-30', '2026-02-07', '2026-02-08'];
 
 export function isSuperBowlWeekendDate(dateString: string): boolean {
   return SUPER_BOWL_WEEKEND_DATES.includes(dateString);
@@ -55,14 +51,14 @@ export type SeasonLeaderQuestion = {
   options: [string, string, string, string]; // Formatted options (may include stat values)
 };
 
-export type SuperBowlQuestionKind = 'superBowlWinner' | 'superBowlMVP' | 'superBowlLoser' | 'superBowlCity';
+export type SuperBowlQuestionKind =
+  | 'superBowlBearsNFC'
+  | 'superBowlWRMVPCount'
+  | 'superBowlRushingRecord'
+  | 'superBowlPatriotsMVPCount';
 
 export type SuperBowlQuestion = {
   type: SuperBowlQuestionKind;
-  roman: string; // e.g. "LVIII"
-  year: number;
-  winner: string;
-  loser: string;
   correctAnswer: string;
   options: [string, string, string, string];
 };
@@ -92,49 +88,41 @@ const shuffle = (date: string) => <T>(arr: T[]): T[] => {
 
 function getSuperBowlQuestions(date: string): GameQuestion[] {
   const doShuffle = shuffle(date);
-  const weekendFacts = superBowlFacts.filter(
-    (f) => f.year >= SUPER_BOWL_WEEKEND_YEAR_MIN && f.year <= SUPER_BOWL_WEEKEND_YEAR_MAX
-  );
-  const idx = seededIndex(hashString(date + 'sb'), weekendFacts.length);
-  const sb = weekendFacts[idx];
-
-  // Tough wrong answers: use only era-appropriate, plausible choices from the same Super Bowl set
-  const otherWinners = [...new Set(weekendFacts.map((f) => f.winner).filter((w) => w !== sb.winner))];
-  const otherLosers = [...new Set(weekendFacts.map((f) => f.loser).filter((l) => l !== sb.loser))];
-  const otherCitiesFromEra = [...new Set(weekendFacts.map((f) => f.city).filter((c) => c !== sb.city))];
-  const otherMvps = weekendFacts.filter((f) => f.mvp !== sb.mvp).map((f) => f.mvp);
 
   const pickWrong = <T>(pool: T[], correct: T, n: number): T[] => {
     const rest = [...new Set(pool.filter((x) => x !== correct))];
     return doShuffle(rest).slice(0, n) as T[];
   };
 
-  // Winner Q: wrong options = other SB winners from era (all plausible champs); if needed, add losers from era
-  const winnerWrongPool = otherWinners.length >= 3 ? otherWinners : [...otherWinners, ...otherLosers.filter((l) => !otherWinners.includes(l))];
-  const winnerOptions = doShuffle([sb.winner, ...pickWrong(winnerWrongPool, sb.winner, 3)]) as [string, string, string, string];
+  // Q1: Who did the Bears beat in the NFC Championship to get to Super Bowl XLI? Answer: Saints. Wrong: other NFC teams.
+  const bearsCorrect = 'Saints';
+  const bearsWrongPool = NFC_TEAMS.filter((t) => t !== bearsCorrect);
+  const bearsOptions = doShuffle([bearsCorrect, ...pickWrong(bearsWrongPool, bearsCorrect, 3)]) as [string, string, string, string];
 
-  // MVP Q: wrong options = other MVPs from same era (all plausible MVPs)
-  const mvpOptions = doShuffle([sb.mvp, ...pickWrong(otherMvps, sb.mvp, 3)]) as [string, string, string, string];
+  // Q2: How many WRs have won Super Bowl MVP? Answer: 8.
+  const wrMvpCorrect = '8';
+  const wrMvpOptions = doShuffle([wrMvpCorrect, ...pickWrong(['5', '6', '7', '9'], wrMvpCorrect, 3)]) as [string, string, string, string];
 
-  // Loser Q: wrong options = other SB losers from era (all plausible runners-up); if needed, add winners
-  const loserWrongPool = otherLosers.length >= 3 ? otherLosers : [...otherLosers, ...otherWinners.filter((w) => !otherLosers.includes(w))];
-  const loserOptions = doShuffle([sb.loser, ...pickWrong(loserWrongPool, sb.loser, 3)]) as [string, string, string, string];
+  // Q3: All-time leading rusher in a single Super Bowl. Answer: Tim Smith (204 yards, SB XXII). Options: names only, no yardage.
+  const rushingCorrect = 'Tim Smith';
+  const rushingWrongPool = ['Marcus Allen', 'Larry Csonka', 'John Riggins', 'Terrell Davis', 'Emmitt Smith'].filter((x) => x !== rushingCorrect);
+  const rushingOptions = doShuffle([rushingCorrect, ...pickWrong(rushingWrongPool, rushingCorrect, 3)]) as [string, string, string, string];
 
-  // City Q: wrong options = other SB host cities from era (all real SB sites)
-  const cityWrongPool = otherCitiesFromEra.length >= 3 ? otherCitiesFromEra : superBowlCityPool.filter((c) => c !== sb.city);
-  const cityOptions = doShuffle([sb.city, ...pickWrong(cityWrongPool, sb.city, 3)]) as [string, string, string, string];
+  // Q4: How many Patriots not named Tom Brady have won Super Bowl MVP? Answer: 2 (Deion Branch XXXIX, Julian Edelman LIII). Fill-in-the-blank.
+  const patsCorrect = '2';
+  const patsOptions = [patsCorrect, '', '', ''] as [string, string, string, string]; // unused; Q4 is fill-in
 
   return [
-    { type: 'superBowlWinner', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.winner, options: winnerOptions },
-    { type: 'superBowlMVP', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.mvp, options: mvpOptions },
-    { type: 'superBowlLoser', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.loser, options: loserOptions },
-    { type: 'superBowlCity', roman: sb.roman, year: sb.year, winner: sb.winner, loser: sb.loser, correctAnswer: sb.city, options: cityOptions },
+    { type: 'superBowlBearsNFC', correctAnswer: bearsCorrect, options: bearsOptions },
+    { type: 'superBowlWRMVPCount', correctAnswer: wrMvpCorrect, options: wrMvpOptions },
+    { type: 'superBowlRushingRecord', correctAnswer: rushingCorrect, options: rushingOptions },
+    { type: 'superBowlPatriotsMVPCount', correctAnswer: patsCorrect, options: patsOptions },
   ];
 }
 
 /**
  * Returns the same 4 questions for everyone on the same calendar day:
- * On Super Bowl weekend: 4 Super Bowl questions (winner, MVP, loser, city).
+ * On Super Bowl weekend: 4 fixed Super Bowl questions (Bears XLI NFC, WR MVP count, rushing record, Patriots non-Brady MVP count).
  * Otherwise: 1 draft + 1 college + 1 career path + 1 season leader.
  */
 export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
