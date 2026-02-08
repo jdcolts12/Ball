@@ -4,6 +4,7 @@ import { careerPathPlayers } from '../data/careerPathPlayers';
 import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
 import { getPstDateString } from './dailyPlayLimit';
 import { getDailyDraftQuestion } from './dailyDraftQuestion';
+import { NFC_TEAMS } from '../data/superBowlFacts';
 
 /** Saturday 2/7/26: original SB set. Sunday 2/8/26: new set — goes live at midnight PST. Monday 2/9+ = regular. */
 const SUPER_BOWL_SATURDAY = '2026-02-07';
