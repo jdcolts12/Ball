@@ -164,7 +164,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   }, [careerPathGuess, handleAnswer]);
 
   const handleSuperBowlFillInSubmit = useCallback(() => {
-    const guess = superBowlFillInGuess.trim();
+    const guess = (superBowlFillInGuess ?? '').toString().trim();
     if (guess === '') return;
     handleAnswer(guess);
   }, [superBowlFillInGuess, handleAnswer]);
@@ -460,6 +460,43 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           </div>
         )}
         {current.type === 'superBowlPatriotsMVPCount' && answered && (
+          <div className="mt-4 p-4 rounded-lg border-2 border-slate-600 bg-slate-800 text-center">
+            <p className={String(selected ?? '') === String(correctAnswer ?? '') ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
+              {String(selected ?? '') === String(correctAnswer ?? '') ? 'Correct!' : 'Wrong'}
+            </p>
+            {String(selected ?? '') !== String(correctAnswer ?? '') && (
+              <p className="text-slate-300 mt-1">The answer was <span className="text-amber-400 font-medium">{correctAnswer}</span>.</p>
+            )}
+            <p className="text-slate-500 text-sm mt-2">
+              {questionCorrectPct != null ? `${questionCorrectPct}% of players got this question correct.` : '—% of players got this question correct.'}
+            </p>
+          </div>
+        )}
+
+        {current.type === 'superBowlLosingTeamMVPCount' && !answered && (
+          <div className="flex flex-col gap-2 mt-4">
+            <input
+              type="text"
+              inputMode="numeric"
+              value={superBowlFillInGuess ?? ''}
+              onChange={(e) => setSuperBowlFillInGuess(e.target.value.replace(/\D/g, ''))}
+              onKeyDown={(e) => e.key === 'Enter' && handleSuperBowlFillInSubmit()}
+              placeholder="Enter number"
+              className="w-full px-4 py-3 rounded-lg border-2 border-slate-600 bg-slate-800 text-white placeholder-slate-500 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+              autoFocus
+              autoComplete="off"
+            />
+            <button
+              type="button"
+              onClick={handleSuperBowlFillInSubmit}
+              disabled={((superBowlFillInGuess ?? '').trim()) === ''}
+              className="w-full py-3 rounded-lg font-bold bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Submit
+            </button>
+          </div>
+        )}
+        {current.type === 'superBowlLosingTeamMVPCount' && answered && (
           <div className="mt-4 p-4 rounded-lg border-2 border-slate-600 bg-slate-800 text-center">
             <p className={String(selected ?? '') === String(correctAnswer ?? '') ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
               {String(selected ?? '') === String(correctAnswer ?? '') ? 'Correct!' : 'Wrong'}
