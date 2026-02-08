@@ -64,6 +64,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const handleAnswer = useCallback(
     (choice: string, isTimeout: boolean = false) => {
       if (answered) return;
+      if (!current) return;
       const answer = String(choice ?? '').trim();
 
       // Clear the timer interval
