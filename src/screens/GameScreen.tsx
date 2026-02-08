@@ -169,6 +169,12 @@ export function GameScreen({ onEnd }: GameScreenProps) {
     handleAnswer(guess);
   }, [superBowlFillInGuess, handleAnswer]);
 
+  const handlePatriotsMvpSubmit = useCallback(() => {
+    const guess = (patriotsMvpGuess ?? '').toString().trim();
+    if (guess === '') return;
+    handleAnswer(guess);
+  }, [patriotsMvpGuess, handleAnswer]);
+
   // Timer effect: countdown and auto-answer when expired
   useEffect(() => {
     // Reset timer when question changes
@@ -435,7 +441,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             <input
               type="text"
               inputMode="numeric"
-              value={patriotsMvpGuess}
+              value={patriotsMvpGuess ?? ''}
               onChange={(e) => setPatriotsMvpGuess(e.target.value.replace(/\D/g, ''))}
               onKeyDown={(e) => e.key === 'Enter' && handlePatriotsMvpSubmit()}
               placeholder="Enter number"
@@ -446,7 +452,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             <button
               type="button"
               onClick={handlePatriotsMvpSubmit}
-              disabled={patriotsMvpGuess.trim() === ''}
+              disabled={((patriotsMvpGuess ?? '').trim()) === ''}
               className="w-full py-3 rounded-lg font-bold bg-amber-500 text-slate-900 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Submit
