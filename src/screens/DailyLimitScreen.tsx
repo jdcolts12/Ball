@@ -48,34 +48,57 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setTodaysGame(null);
+    setQuestions(getDailyGameQuestions());
+
+    const LOAD_TIMEOUT_MS = 8000;
+
     async function fetchTodaysGame() {
-      setLoading(true);
-      const { game, error } = await getTodaysGame();
-      if (error) {
-        console.error('Daily stats: failed to load today\'s game', error);
+      try {
+        const result = await Promise.race([
+          getTodaysGame(),
+          new Promise<{ game: null; error: Error }>((_, reject) =>
+            setTimeout(() => reject(new Error('timeout')), LOAD_TIMEOUT_MS)
+          ),
+        ]).catch((err) => {
+          if (err?.message === 'timeout') {
+            console.warn('Daily stats: load timed out');
+            return { game: null, error: new Error('Timed out') };
+          }
+          return { game: null, error: err instanceof Error ? err : new Error(String(err)) };
+        });
+
+        if (cancelled) return;
+        if (result.error) {
+          console.error('Daily stats: failed to load today\'s game', result.error);
+        }
+        setTodaysGame(result.game ?? null);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Daily stats: unexpected error', err);
+          setTodaysGame(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (!error && game) {
-        setTodaysGame(game);
-      }
-      // Get today's questions to display
-      const todaysQuestions = getDailyGameQuestions();
-      setQuestions(todaysQuestions);
-      setLoading(false);
     }
-    
+
     async function fetchGameStreak() {
       try {
         const { profile, error } = await getUserPublicProfile(currentUserId);
-        if (!error && profile) {
+        if (!cancelled && !error && profile) {
           setGameStreak(profile.consecutive_days_played ?? 0);
         }
-      } catch (err) {
-        setGameStreak(0);
+      } catch {
+        if (!cancelled) setGameStreak(0);
       }
     }
-    
+
     fetchTodaysGame();
     fetchGameStreak();
+    return () => { cancelled = true; };
   }, [currentUserId]);
 
   return (

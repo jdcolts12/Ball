@@ -197,7 +197,11 @@ export async function getTodaysGame(): Promise<{ game: Game | null; error: Error
   const { data, error } = await supabase.rpc('get_todays_game');
 
   if (!error && data != null) {
-    const game = Array.isArray(data) && data.length > 0 ? (data[0] as Game) : null;
+    const game: Game | null = Array.isArray(data)
+      ? (data.length > 0 ? (data[0] as Game) : null)
+      : typeof data === 'object' && data !== null && !Array.isArray(data)
+        ? (data as Game)
+        : null;
     return { game, error: null };
   }
 
