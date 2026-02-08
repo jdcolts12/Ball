@@ -195,25 +195,14 @@ export function ProfileScreen({ userId, currentUserId, onBack, onOpenProfile }: 
       avatar_url: editAvatarUrl.trim() || null,
       profile_bg_color: editProfileBgColor || 'green',
     });
-    if (avatarRes.error) {
-      setActionError(avatarRes.error.message);
-    } else {
-      setEditing(false);
-      setProfile((p) =>
-        p
-          ? {
-              ...p,
-              username: editUsername.trim() || null,
-              avatar_url: editAvatarUrl.trim() || null,
-              profile_bg_color: editProfileBgColor || 'green',
-            }
-          : null
-      );
-      // Refetch from DB so profile_bg_color persists and is in sync
-      getUserPublicProfile(userId).then((res) => {
-        if (res.profile) setProfile(res.profile);
-      });
-    }
+    if (avatarRes.error) setActionError(avatarRes.error.message);
+    // Refetch by user id so UI shows new username and same stats/streaks (keyed by user_id).
+    getUserPublicProfile(userId).then((res) => {
+      if (res.profile) {
+        setProfile(res.profile);
+        setEditing(false);
+      }
+    });
     setActionBusy(false);
   };
 

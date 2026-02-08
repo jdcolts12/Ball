@@ -71,6 +71,10 @@ export async function getUserCareerPercentile(userId: string): Promise<{ percent
   return { percentile: Number.isFinite(val) ? val : null, error: null };
 }
 
+/**
+ * Update profile display fields only (username, avatar, bg color).
+ * Identity (profiles.id) is never changed, so friends and stats remain linked.
+ */
 export async function updateMyProfile(updates: {
   username?: string;
   avatar_url?: string | null;

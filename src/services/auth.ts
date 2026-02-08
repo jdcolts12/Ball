@@ -78,6 +78,10 @@ export async function checkUsernameAvailable(username: string, excludeUserId?: s
   }
 }
 
+/**
+ * Update display username only. Identity (profiles.id) is unchanged, so
+ * friends, stats (games, stats), and streaks stay linked to this user.
+ */
 export async function updateUsername(userId: string, username: string): Promise<{ error: Error | null }> {
   // Check if username is available (excluding current user)
   const { available, error: checkError } = await checkUsernameAvailable(username, userId);

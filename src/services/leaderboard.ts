@@ -20,34 +20,61 @@ function pctFromTotals(totalCorrect: number, totalQuestions: number): number {
   return totalQuestions <= 0 ? 0 : Math.round((totalCorrect / totalQuestions) * 100);
 }
 
+/** Supabase API returns max 1000 rows per request. Paginate with offset so we get everyone. */
+const DAILY_PAGE_SIZE = 1000;
+
+type DailyRpcRow = { rank: number; user_id: string; username: string; score: number; total_correct?: number; total_questions?: number };
+
+function mapDailyRow(r: DailyRpcRow): LeaderboardRow {
+  const score = Number(r.score);
+  const totalCorrect = Number(r.total_correct ?? 0);
+  const totalQuestions = Number(r.total_questions ?? 0);
+  const badges: string[] = score === 4 ? ['perfect'] : [];
+  return {
+    rank: Number(r.rank),
+    userId: r.user_id ?? undefined,
+    username: r.username ?? 'Anonymous',
+    score,
+    pctCorrect: totalQuestions > 0 ? pctFromTotals(totalCorrect, totalQuestions) : (score <= 0 ? 0 : Math.round((score / 4) * 100)),
+    badges: badges.length > 0 ? badges : undefined,
+  };
+}
+
 export async function getDailyLeaderboard(limit = 999999): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {
-  const { data, error } = await supabase.rpc('get_daily_leaderboard', { limit_rows: limit });
-  if (error) {
-    console.error('Daily leaderboard error:', error);
-    return { rows: [], error: new Error(error.message) };
-  }
-  console.log('Daily leaderboard returned', data?.length || 0, 'rows (requested limit:', limit, ')');
-  const rows = (data ?? []).map((r: { rank: number; user_id: string; username: string; score: number; total_correct?: number; total_questions?: number }) => {
-    const score = Number(r.score);
-    const totalCorrect = Number(r.total_correct ?? 0);
-    const totalQuestions = Number(r.total_questions ?? 0);
-    const badges: string[] = [];
-    
-    // Perfect game badge for daily (score === 4 means all 4 questions correct)
-    if (score === 4) {
-      badges.push('perfect');
-    }
-    
-    return {
-      rank: Number(r.rank),
-      userId: r.user_id ?? undefined,
-      username: r.username ?? 'Anonymous',
-      score,
-      pctCorrect: totalQuestions > 0 ? pctFromTotals(totalCorrect, totalQuestions) : (score <= 0 ? 0 : Math.round((score / 4) * 100)),
-      badges: badges.length > 0 ? badges : undefined,
+  const allData: DailyRpcRow[] = [];
+  let offset = 0;
+  let usedFallback = false;
+  while (true) {
+    const params: { limit_rows: number; offset_rows?: number } = {
+      limit_rows: DAILY_PAGE_SIZE,
+      offset_rows: offset,
     };
-  });
-  return { rows, error: null };
+    const { data, error } = await supabase.rpc('get_daily_leaderboard', params);
+    if (error) {
+      if (!usedFallback && (error.message.includes('function') || error.message.includes('does not exist'))) {
+        usedFallback = true;
+        const { data: fallbackData, error: fallbackError } = await supabase.rpc('get_daily_leaderboard', {
+          limit_rows: limit,
+        });
+        if (fallbackError) {
+          console.error('Daily leaderboard error:', fallbackError);
+          return { rows: [], error: new Error(fallbackError.message) };
+        }
+        const arr = (fallbackData ?? []) as DailyRpcRow[];
+        console.log('Daily leaderboard (single call) returned', arr.length, 'rows. Run RUN_DAILY_LEADERBOARD_FIX.sql in Supabase to show everyone.');
+        return { rows: arr.map(mapDailyRow), error: null };
+      }
+      console.error('Daily leaderboard error:', error);
+      return { rows: [], error: new Error(error.message) };
+    }
+    const chunk = (data ?? []) as DailyRpcRow[];
+    allData.push(...chunk);
+    if (chunk.length < DAILY_PAGE_SIZE) break;
+    offset += DAILY_PAGE_SIZE;
+    if (offset >= limit) break;
+  }
+  console.log('Daily leaderboard returned', allData.length, 'rows');
+  return { rows: allData.map(mapDailyRow), error: null };
 }
 
 export async function getMonthlyLeaderboard(limit = 500): Promise<{ rows: LeaderboardRow[]; error: Error | null }> {

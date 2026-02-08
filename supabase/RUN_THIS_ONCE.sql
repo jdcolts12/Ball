@@ -12,6 +12,7 @@ create table if not exists public.profiles (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+comment on table public.profiles is 'User profiles. id is the stable identity (auth user id); username is display-only. Games, stats, and friend_requests reference profiles(id), so changing username does not affect friends or stats.';
 create unique index if not exists profiles_username_key on public.profiles (username) where username is not null;
 
 create table if not exists public.games (
@@ -102,19 +103,18 @@ drop function if exists public.get_draft_correct_pct_today();
 drop function if exists public.get_college_correct_pct_today();
 drop function if exists public.get_career_path_correct_pct_today();
 
-create or replace function public.get_daily_leaderboard(limit_rows int default 50)
-returns table (rank bigint, username text, score bigint, total_correct bigint, total_questions bigint) language sql security definer set search_path = public stable as $$
+-- Daily: PST "today", LEFT JOIN profiles so everyone who played today is shown (including users without profile).
+create or replace function public.get_daily_leaderboard(limit_rows int default 999999)
+returns table (rank bigint, user_id uuid, username text, score bigint, total_correct bigint, total_questions bigint) language sql security definer set search_path = public stable as $$
   with daily_agg as (
-    select g.user_id,
-      max(g.score) as score,
-      sum(g.correct_answers)::bigint as total_correct,
-      sum(g.questions_answered)::bigint as total_questions
+    select g.user_id, max(g.score) as score, sum(g.correct_answers)::bigint as total_correct, sum(g.questions_answered)::bigint as total_questions
     from public.games g
-    where (g.created_at at time zone 'utc')::date = (current_timestamp at time zone 'utc')::date
+    where (g.created_at at time zone 'America/Los_Angeles')::date = (current_timestamp at time zone 'America/Los_Angeles')::date
     group by g.user_id
-  )
-  select row_number() over (order by d.score desc nulls last) as rank, coalesce(p.username, 'Anonymous') as username, d.score::bigint, d.total_correct, d.total_questions
-  from daily_agg d join public.profiles p on p.id = d.user_id order by d.score desc limit limit_rows;
+  ),
+  ordered as (select d.user_id, d.score, d.total_correct, d.total_questions, (d.total_correct::numeric / nullif(d.total_questions, 0)) as pct from daily_agg d)
+  select row_number() over (order by o.pct desc nulls last, o.score desc nulls last)::bigint as rank, o.user_id, coalesce(p.username, 'Anonymous') as username, o.score::bigint, o.total_correct, o.total_questions
+  from ordered o left join public.profiles p on p.id = o.user_id order by o.pct desc nulls last, o.score desc nulls last limit coalesce(nullif(limit_rows, 0), 999999);
 $$;
 
 create or replace function public.get_monthly_leaderboard(limit_rows int default 50)
@@ -132,10 +132,12 @@ returns table (rank bigint, username text, score bigint, total_correct bigint, t
   from monthly_agg m join public.profiles p on p.id = m.user_id order by m.score desc limit limit_rows;
 $$;
 
-create or replace function public.get_all_time_leaderboard(limit_rows int default 50)
-returns table (rank bigint, username text, total_correct bigint, total_questions bigint) language sql security definer set search_path = public stable as $$
-  select row_number() over (order by s.total_correct desc nulls last) as rank, coalesce(p.username, 'Anonymous') as username, s.total_correct::bigint, s.total_questions::bigint
-  from public.stats s join public.profiles p on p.id = s.user_id order by s.total_correct desc limit limit_rows;
+-- Career: order by career % (top to lowest), then total_correct. Return user_id for profile links.
+create or replace function public.get_all_time_leaderboard(limit_rows int default 500)
+returns table (rank bigint, user_id uuid, username text, total_correct bigint, total_questions bigint) language sql security definer set search_path = public stable as $$
+  with pct_ordered as (select s.user_id, s.total_correct, s.total_questions, (s.total_correct::numeric / nullif(s.total_questions, 0)) as pct from public.stats s)
+  select row_number() over (order by o.pct desc nulls last, o.total_correct desc nulls last)::bigint as rank, o.user_id, coalesce(p.username, 'Anonymous') as username, o.total_correct::bigint, o.total_questions::bigint
+  from pct_ordered o left join public.profiles p on p.id = o.user_id order by o.pct desc nulls last, o.total_correct desc nulls last limit coalesce(nullif(limit_rows, 0), 500);
 $$;
 
 -- % of today's games where each question type was answered correctly (shown after each question).
