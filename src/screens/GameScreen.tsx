@@ -25,7 +25,11 @@ interface GameScreenProps {
 }
 
 export function GameScreen({ onEnd }: GameScreenProps) {
-  const date = useMemo(() => getPstDateString(), []);
+  const date = useMemo(() => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    const override = params.get('date');
+    return override ?? getPstDateString();
+  }, []);
   const questions = useMemo(() => getDailyGameQuestions(date), [date]);
   const isSuperBowlWeekend = isSuperBowlWeekendDate(date);
 
@@ -50,28 +54,29 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   const [timeRemaining, setTimeRemaining] = useState(30);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  const current: GameQuestion = questions[index];
+  const current: GameQuestion | undefined = questions[index];
   const correctAnswer =
-    current.type === 'college'
-      ? current.college
-      : current.correctAnswer;
-  const options = current.options;
+    current?.type === 'college'
+      ? (current as import('../lib/dailyGameQuestions').CollegeQuestion).college
+      : (current as { correctAnswer?: string } | undefined)?.correctAnswer ?? '';
+  const options = current?.options ?? [];
 
   const handleAnswer = useCallback(
     (choice: string, isTimeout: boolean = false) => {
       if (answered) return;
-      
+      const answer = String(choice ?? '').trim();
+
       // Clear the timer interval
       if (timerIntervalRef.current) {
         clearInterval(timerIntervalRef.current);
         timerIntervalRef.current = null;
       }
-      
+
       setAnswered(true);
       const correct =
         current.type === 'careerPath'
-          ? isCloseEnough(choice, correctAnswer)
-          : choice === correctAnswer;
+          ? isCloseEnough(answer, correctAnswer)
+          : answer === correctAnswer;
       const currentCorrect = correct; // boolean: did this player get it right
       if (current.type === 'draft') {
         getDraftCorrectPctToday().then(({ total, correct: correctCount, error }) =>
@@ -88,7 +93,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
         setScore((s) => s + 1);
         setCorrectCount((c) => c + 1);
       }
-      setSelected(choice);
+      setSelected(answer);
 
       const newScore = score + (correct ? 1 : 0);
       const newCorrect = correctCount + (correct ? 1 : 0);
@@ -97,8 +102,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
       const isCareerPath = current.type === 'careerPath' || current.type === 'superBowlLosingTeamMVPCount' || current.type === 'superBowlRushingRecord';
       const isSeasonLeader = current.type === 'seasonLeader' || current.type === 'superBowlLIIMVP' || current.type === 'superBowlPatriotsMVPCount';
 
-      // Store user answer for this question (use ref to avoid stale closure)
-      const userAnswer = (isCareerPath && current.type === 'careerPath') ? careerPathGuess : (current.type === 'superBowlLosingTeamMVPCount' ? superBowlFillInGuess : (current.type === 'superBowlPatriotsMVPCount' ? patriotsMvpGuess : choice));
+      // Store the value that was actually submitted (answer is trimmed; use for all types)
+      const userAnswer = answer;
       if (isDraft) userAnswersByTypeRef.current[0] = userAnswer;
       else if (isCollege) userAnswersByTypeRef.current[1] = userAnswer;
       else if (isCareerPath) userAnswersByTypeRef.current[2] = userAnswer;
@@ -193,7 +198,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           }
           // For timeout, we need to provide a wrong answer
           // For careerPath / SB fill-in: use empty string (will be wrong)
-          const wrongAnswer = (currentQuestion.type === 'careerPath' || currentQuestion.type === 'superBowlLosingTeamMVPCount' || currentQuestion.type === 'superBowlPatriotsMVPCount') ? '' : currentOptions.find(opt => opt !== currentCorrectAnswer) || currentOptions[0];
+          const wrongAnswer = (currentQuestion.type === 'careerPath' || currentQuestion.type === 'superBowlLosingTeamMVPCount' || currentQuestion.type === 'superBowlPatriotsMVPCount') ? '' : (currentOptions.find(opt => opt != null && opt !== '' && opt !== currentCorrectAnswer) ?? currentOptions[0] ?? '');
           handleAnswer(wrongAnswer, true);
           return 0;
         }
@@ -218,7 +223,22 @@ export function GameScreen({ onEnd }: GameScreenProps) {
     }
   }, [answered]);
 
-  const careerPathCorrect = current.type === 'careerPath' && answered && isCloseEnough(careerPathGuess, current.correctAnswer);
+  const careerPathCorrect = current?.type === 'careerPath' && answered && current && isCloseEnough(careerPathGuess, current.correctAnswer);
+
+  if (!current || questions.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6">
+        <p className="text-slate-400 text-center">No questions for this date.</p>
+        <button
+          type="button"
+          onClick={() => onEnd(0, 0, 0, { draftCorrect: false, collegeCorrect: false, careerPathCorrect: false, seasonLeaderCorrect: false })}
+          className="mt-4 px-4 py-2 rounded-lg bg-amber-500 text-slate-900 font-semibold"
+        >
+          Exit
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col items-center justify-center p-6">
@@ -434,10 +454,10 @@ export function GameScreen({ onEnd }: GameScreenProps) {
         )}
         {current.type === 'superBowlPatriotsMVPCount' && answered && (
           <div className="mt-4 p-4 rounded-lg border-2 border-slate-600 bg-slate-800 text-center">
-            <p className={selected === correctAnswer ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
-              {selected === correctAnswer ? 'Correct!' : 'Wrong'}
+            <p className={String(selected ?? '') === String(correctAnswer ?? '') ? 'text-green-400 font-semibold' : 'text-red-400 font-semibold'}>
+              {String(selected ?? '') === String(correctAnswer ?? '') ? 'Correct!' : 'Wrong'}
             </p>
-            {selected !== correctAnswer && (
+            {String(selected ?? '') !== String(correctAnswer ?? '') && (
               <p className="text-slate-300 mt-1">The answer was <span className="text-amber-400 font-medium">{correctAnswer}</span>.</p>
             )}
             <p className="text-slate-500 text-sm mt-2">
@@ -448,7 +468,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
 
         {current.type !== 'careerPath' && current.type !== 'superBowlPatriotsMVPCount' && current.type !== 'superBowlLosingTeamMVPCount' && (
           <div className="grid gap-3">
-            {options.map((opt) => {
+            {options.filter((opt): opt is string => opt != null && opt !== '').map((opt, i) => {
               const isSelected = selected === opt;
               const isCorrect = opt === correctAnswer;
               const showResult = answered && isSelected;
@@ -459,7 +479,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
 
               return (
                 <button
-                  key={opt}
+                  key={`opt-${index}-${i}`}
                   type="button"
                   disabled={answered}
                   onClick={() => handleAnswer(opt)}
