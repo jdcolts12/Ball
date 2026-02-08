@@ -53,34 +53,24 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
     setTodaysGame(null);
     setQuestions(getDailyGameQuestions());
 
-    const LOAD_TIMEOUT_MS = 8000;
+    // Guaranteed stop loading after 5s so we never hang
+    const maxWaitId = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 5000);
 
     async function fetchTodaysGame() {
       try {
-        const result = await Promise.race([
-          getTodaysGame(),
-          new Promise<{ game: null; error: Error }>((_, reject) =>
-            setTimeout(() => reject(new Error('timeout')), LOAD_TIMEOUT_MS)
-          ),
-        ]).catch((err) => {
-          if (err?.message === 'timeout') {
-            console.warn('Daily stats: load timed out');
-            return { game: null, error: new Error('Timed out') };
-          }
-          return { game: null, error: err instanceof Error ? err : new Error(String(err)) };
-        });
-
+        const { game, error } = await getTodaysGame();
         if (cancelled) return;
-        if (result.error) {
-          console.error('Daily stats: failed to load today\'s game', result.error);
-        }
-        setTodaysGame(result.game ?? null);
+        if (error) console.error('Daily stats: failed to load today\'s game', error);
+        setTodaysGame(game ?? null);
       } catch (err) {
         if (!cancelled) {
           console.error('Daily stats: unexpected error', err);
           setTodaysGame(null);
         }
       } finally {
+        clearTimeout(maxWaitId);
         if (!cancelled) setLoading(false);
       }
     }
@@ -98,7 +88,10 @@ export function DailyLimitScreen({ currentUserId, onLeaderboard, onMyProfile }: 
 
     fetchTodaysGame();
     fetchGameStreak();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      clearTimeout(maxWaitId);
+    };
   }, [currentUserId]);
 
   return (
