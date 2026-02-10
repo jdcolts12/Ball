@@ -1,5 +1,33 @@
 import { supabase } from '../lib/supabase';
 import type { UserPublicProfile } from '../types/database';
+import { calculatePerfectGameStreak } from '../lib/badges';
+
+/** PST date string from ISO timestamp (matches DB logic). */
+function pstDateFromIso(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-CA', { timeZone: 'America/Los_Angeles', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+  } catch {
+    return iso.slice(0, 10);
+  }
+}
+
+/** Consecutive days played (current streak) from games, PST dates. */
+function consecutiveDaysFromGames(games: Array<{ created_at: string }>): number {
+  if (games.length === 0) return 0;
+  const dates = [...new Set(games.map((g) => pstDateFromIso(g.created_at)))].sort((a, b) => b.localeCompare(a));
+  let streak = 0;
+  for (let i = 0; i < dates.length; i++) {
+    if (i === 0) streak = 1;
+    else {
+      const prev = new Date(dates[i - 1] + 'T00:00:00');
+      const curr = new Date(dates[i] + 'T00:00:00');
+      if (Math.floor((prev.getTime() - curr.getTime()) / 86400000) === 1) streak++;
+      else break;
+    }
+  }
+  return streak;
+}
 
 export async function getUserPublicProfile(userId: string): Promise<{
   profile: UserPublicProfile | null;
@@ -29,36 +57,68 @@ export async function getUserPublicProfile(userId: string): Promise<{
       error: null,
     };
   }
-  // Fallback when RPC missing or permission denied: fetch profile row only (no stats)
+  // Fallback when RPC fails: fetch profile + stats + games by user_id so stats/streaks never "restart"
   const needFallback =
     error.message.includes('does not exist') ||
     error.message.includes('permission denied') ||
     error.message.includes('undefined');
   if (needFallback) {
+    const { data: { user: currentUser } } = await supabase.auth.getUser();
+    const isOwn = currentUser?.id === userId;
+
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .select('id, username')
+      .select('id, username, avatar_url, profile_bg_color')
       .eq('id', userId)
       .maybeSingle();
-    if (!profileError && profileData) {
-      const row = profileData as { id: string; username: string | null; avatar_url?: string | null };
-      return {
-        profile: {
-          user_id: row.id,
-          username: row.username ?? null,
-          avatar_url: row.avatar_url ?? null,
-          profile_bg_color: (row as { profile_bg_color?: string }).profile_bg_color ?? 'green',
-          career_pct: 0,
-          total_correct: 0,
-          total_questions: 0,
-          total_games: 0,
-          total_perfect_games: 0,
-          consecutive_days_played: 0,
-          best_perfect_streak: 0,
-        },
-        error: null,
-      };
+    if (profileError || !profileData) {
+      return { profile: null, error: new Error(error.message) };
     }
+    const pr = profileData as { id: string; username: string | null; avatar_url?: string | null; profile_bg_color?: string | null };
+
+    let total_correct = 0;
+    let total_questions = 0;
+    let total_games = 0;
+    let consecutive_days_played = 0;
+    let best_perfect_streak = 0;
+    let total_perfect_games = 0;
+
+    if (isOwn) {
+      const { data: statsData } = await supabase.from('stats').select('total_correct, total_questions, total_games').eq('user_id', userId).maybeSingle();
+      if (statsData) {
+        total_correct = Number(statsData.total_correct ?? 0);
+        total_questions = Number(statsData.total_questions ?? 0);
+        total_games = Number(statsData.total_games ?? 0);
+      }
+      const { data: gamesData } = await supabase
+        .from('games')
+        .select('created_at, correct_answers, questions_answered')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(500);
+      const games = (gamesData ?? []) as Array<{ created_at: string; correct_answers: number; questions_answered: number }>;
+      consecutive_days_played = consecutiveDaysFromGames(games);
+      best_perfect_streak = calculatePerfectGameStreak(games);
+      total_perfect_games = games.filter((g) => g.questions_answered >= 3 && g.correct_answers === g.questions_answered).length;
+    }
+
+    const career_pct = total_questions > 0 ? Math.round((total_correct / total_questions) * 100) : 0;
+    return {
+      profile: {
+        user_id: pr.id,
+        username: pr.username ?? null,
+        avatar_url: pr.avatar_url ?? null,
+        profile_bg_color: pr.profile_bg_color ?? 'green',
+        career_pct,
+        total_correct,
+        total_questions,
+        total_games,
+        total_perfect_games,
+        consecutive_days_played,
+        best_perfect_streak,
+      },
+      error: null,
+    };
   }
   return { profile: null, error: new Error(error.message) };
 }

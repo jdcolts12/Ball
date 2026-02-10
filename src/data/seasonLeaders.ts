@@ -63,8 +63,8 @@ export const seasonLeaders: SeasonLeader[] = [
   { year: 1985, category: 'passing', leader: 'Dan Marino', wrongOptions: [{ name: 'Joe Montana' }, { name: 'Phil Simms' }, { name: 'Jim Kelly' }] },
 
   // Rushing Yards Leaders (1985-2024) - Verified from Pro Football Reference
-  { year: 2024, category: 'rushing', leader: 'Derrick Henry', wrongOptions: [{ name: 'Christian McCaffrey' }, { name: 'Josh Jacobs' }, { name: 'Saquon Barkley' }] },
-  { year: 2023, category: 'rushing', leader: 'Derrick Henry', wrongOptions: [{ name: 'Christian McCaffrey' }, { name: 'Josh Jacobs' }, { name: 'Breece Hall' }] },
+  { year: 2024, category: 'rushing', leader: 'Saquon Barkley', wrongOptions: [{ name: 'Derrick Henry' }, { name: 'Josh Jacobs' }, { name: 'Bijan Robinson' }] },
+  { year: 2023, category: 'rushing', leader: 'Christian McCaffrey', wrongOptions: [{ name: 'Derrick Henry' }, { name: 'Josh Jacobs' }, { name: 'Breece Hall' }] },
   { year: 2022, category: 'rushing', leader: 'Josh Jacobs', wrongOptions: [{ name: 'Derrick Henry' }, { name: 'Nick Chubb' }, { name: 'Saquon Barkley' }] },
   { year: 2021, category: 'rushing', leader: 'Jonathan Taylor', wrongOptions: [{ name: 'Derrick Henry' }, { name: 'Nick Chubb' }, { name: 'Joe Mixon' }] },
   { year: 2020, category: 'rushing', leader: 'Derrick Henry', wrongOptions: [{ name: 'Dalvin Cook' }, { name: 'Josh Jacobs' }, { name: 'Aaron Jones' }] },

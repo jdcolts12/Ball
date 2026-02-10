@@ -67,3 +67,28 @@ export function recordPlay(): void {
     // ignore (e.g. private mode)
   }
 }
+
+/**
+ * Time until next midnight in America/Los_Angeles (PST/PDT), formatted as HH:MM:SS.
+ * Used for "next game" countdown so it matches when the daily game resets.
+ */
+export function getTimeUntilMidnightPST(): string {
+  const now = new Date();
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/Los_Angeles',
+    hour: '2-digit',
+    hour12: false,
+    minute: '2-digit',
+    second: '2-digit',
+  });
+  const parts = formatter.formatToParts(now);
+  const hour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);
+  const minute = parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+  const second = parseInt(parts.find((p) => p.type === 'second')?.value ?? '0', 10);
+  const secondsUntilMidnight = 24 * 3600 - (hour * 3600 + minute * 60 + second);
+  const total = Math.max(0, secondsUntilMidnight);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = total % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+}

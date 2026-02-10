@@ -1,26 +1,34 @@
-# Deploy (detailed version)
+# Get fixes live
 
-**Prefer the short version:** see **START_HERE.md**.
+## 1. Run SQL in Supabase (Database)
 
----
+In **Supabase → SQL Editor**, run these **in order** (copy entire file, paste, Run):
 
-## 1. Push to GitHub
+1. **Daily leaderboard (show everyone who played today)**  
+   Open `supabase/RUN_DAILY_LEADERBOARD_FIX.sql` → copy all → paste in SQL Editor → Run.
 
-- Folder: `football-trivia` (that folder is the git repo).
-- Terminal: `cd "/Users/joeydias/Desktop/Cursor Project 1/football-trivia"` then `git add -A && git commit -m "Updates" && git push origin main`.
-- Or GitHub Desktop: open `football-trivia`, then Commit → Push.
+2. **Career tab (order from top % to lowest %)**  
+   Open `supabase/RUN_CAREER_LEADERBOARD_ORDER.sql` → copy all → paste in SQL Editor → Run.
 
-## 2. Vercel
+## 2. Deploy the app (Vercel)
 
-- **Settings** → **General** → **Root Directory**: leave *empty* (clear if it says `football-trivia`). Save.
-- **Deployments** → ⋯ on latest → **Redeploy** → uncheck “Redeploy with existing Build Cache” → **Redeploy**.
+From the project folder, push to GitHub so Vercel can deploy:
 
-## 3. Test
+```bash
+cd "/Users/joeydias/Desktop/Cursor Project 1/football-trivia"
+git push origin main
+```
 
-- Open your live URL in a **new incognito** window.
-- You should see “Version 2.0 — Feb 2026” on the home screen and “YunoBall – Daily NFL Trivia (v2.0)” in the tab title.
+If Vercel is connected to this repo, a production deploy will start automatically.
 
-## 4. If it still doesn’t update
+**Or** deploy from the CLI:
 
-- Vercel → **Settings** → **Environment Variables**: ensure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set for Production.
-- Try another browser or device in incognito.
+```bash
+npx vercel --prod
+```
+
+(Use `vercel login` first if needed.)
+
+## 3. Hard refresh
+
+After deploy, do a hard refresh (or open in incognito) on the live URL so you get the new JS.

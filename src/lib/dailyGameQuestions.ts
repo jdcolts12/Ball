@@ -164,13 +164,15 @@ function getSuperBowlSundayQuestions(date: string): GameQuestion[] {
  * Returns the same 4 questions for everyone on the same calendar day (PST).
  * Saturday 2/7: original SB set (Bears XLI, WR MVP, Tim Smith, Patriots fill-in).
  * Sunday 2/8 (from midnight PST): new SB set (first SB winner, last defensive MVP, losing-team MVP count fill-in, SB LII MVP).
- * Otherwise: 1 draft + 1 college + 1 career path + 1 season leader.
+ * Monday 2/9 and onward: regular questions (1 draft + 1 college + 1 career path + 1 season leader).
  */
 export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
   const date = dateString ?? getPstDateString(); // PST → new questions go live at midnight Pacific
   const d = normalizePstDate(date);
+  // Super Bowl weekend only: 2/7 and 2/8
   if (d === SUPER_BOWL_SATURDAY) return getSuperBowlSaturdayQuestions(date);
   if (d === SUPER_BOWL_SUNDAY) return getSuperBowlSundayQuestions(date);
+  // All other dates (including 2/9+) return regular questions
 
   const draftQ = getDailyDraftQuestion(date);
   const doShuffle = shuffle(date);

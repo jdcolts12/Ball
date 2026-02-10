@@ -16,3 +16,4 @@ dist/
 
 # Supabase local (if you use it later)
 .supabase/
+.vercel

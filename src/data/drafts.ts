@@ -25,9 +25,9 @@ export const draftClasses: DraftClass[] = [
       "Joe Alt",
       "Malik Nabers",
       "JC Latham",
-      "Michael Penix Jr.",
+      "Michael Penix",
       "Rome Odunze",
-      "JJ McCarthy",
+      "J.J. McCarthy",
     ],
   },
   {
