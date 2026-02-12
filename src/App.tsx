@@ -7,7 +7,6 @@ import { AuthScreen } from './screens/AuthScreen';
 import { DailyLimitScreen } from './screens/DailyLimitScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { GameScreen } from './screens/GameScreen';
-import { ResultsScreen } from './screens/ResultsScreen';
 import { QuizFinishedPopup } from './screens/QuizFinishedPopup';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
@@ -24,7 +23,6 @@ function App() {
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
   const [results, setResults] = useState<{ score: number; correct: number; total: number; breakdown: GameResultBreakdown } | null>(null);
   const [startingGame, setStartingGame] = useState(false);
-  const [showQuizFinishedPopup, setShowQuizFinishedPopup] = useState(false);
   const [careerRankBefore, setCareerRankBefore] = useState<number | null>(null);
 
   if (initializing) {
@@ -84,31 +82,17 @@ function App() {
   if (screen === 'results' && results) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
-        {showQuizFinishedPopup ? (
-          <QuizFinishedPopup
-            correct={results.correct}
-            total={results.total}
-            userId={user.id}
-            careerRankBefore={careerRankBefore}
-            onClose={() => {
-              setShowQuizFinishedPopup(false);
-              setResults(null);
-              setScreen('home');
-              refreshCanPlay();
-            }}
-          />
-        ) : (
-          <ResultsScreen
-            score={results.score}
-            correct={results.correct}
-            total={results.total}
-            breakdown={results.breakdown}
-            currentUserId={user.id}
-            onLeaderboard={() => setScreen('leaderboard')}
-            onHome={() => { refreshCanPlay().then(() => { setResults(null); setScreen('home'); }); }}
-            onOpenProfile={(uid) => { setProfileUserId(uid); setScreen('profile'); }}
-          />
-        )}
+        <QuizFinishedPopup
+          correct={results.correct}
+          total={results.total}
+          userId={user.id}
+          careerRankBefore={careerRankBefore}
+          onClose={() => {
+            setResults(null);
+            setScreen('home');
+            refreshCanPlay();
+          }}
+        />
       </div>
     );
   }
@@ -162,14 +146,12 @@ function App() {
               .then(() => {
                 recordPlay();
                 setResults({ score, correct, total, breakdown });
-                setShowQuizFinishedPopup(true);
                 setScreen('results');
               })
               .catch((err) => {
                 console.error('Failed to save game (daily stats may not show):', err);
-                recordPlay(); // still block replay
+                recordPlay();
                 setResults({ score, correct, total, breakdown });
-                setShowQuizFinishedPopup(true);
                 setScreen('results');
               });
           } else {
