@@ -167,7 +167,9 @@ function App() {
               })
               .catch((err) => {
                 console.error('Failed to save game (daily stats may not show):', err);
+                recordPlay(); // still block replay
                 setResults({ score, correct, total, breakdown });
+                setShowQuizFinishedPopup(true);
                 setScreen('results');
               });
           } else {
@@ -181,4 +183,3 @@ function App() {
 }
 
 export default App;
-// Force redeploy - post-quiz popup live
