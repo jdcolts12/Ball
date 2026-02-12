@@ -1,5 +1,6 @@
 import type { PlayerQuestion } from '../data/players';
 import { players } from '../data/players';
+import { collegePlayersRecent } from '../data/collegePlayersRecent';
 import { careerPathPlayers } from '../data/careerPathPlayers';
 import { seasonLeaders, type SeasonLeader } from '../data/seasonLeaders';
 import { getPstDateString } from './dailyPlayLimit';
@@ -9,6 +10,10 @@ import { NFC_TEAMS } from '../data/superBowlFacts';
 /** Saturday 2/7/26: original SB set. Sunday 2/8/26: new set — goes live at midnight PST. Monday 2/9+ = regular. */
 const SUPER_BOWL_SATURDAY = '2026-02-07';
 const SUPER_BOWL_SUNDAY = '2026-02-08';
+
+/** For the next month: use recent players (2010+ draft, 2+ Pro Bowls) for college questions. */
+const COLLEGE_RECENT_START = '2026-02-10';
+const COLLEGE_RECENT_END = '2026-03-11';
 
 /** Normalize to YYYY-MM-DD so we match even if getPstDateString returns single-digit month/day. */
 function normalizePstDate(s: string): string {
@@ -20,6 +25,11 @@ function normalizePstDate(s: string): string {
 export function isSuperBowlWeekendDate(dateString: string): boolean {
   const d = normalizePstDate(dateString);
   return d === SUPER_BOWL_SATURDAY || d === SUPER_BOWL_SUNDAY;
+}
+
+function isCollegeRecentDate(dateString: string): boolean {
+  const d = normalizePstDate(dateString);
+  return d >= COLLEGE_RECENT_START && d <= COLLEGE_RECENT_END;
 }
 
 export type CollegeQuestion = {
@@ -186,9 +196,10 @@ export function getDailyGameQuestions(dateString?: string): GameQuestion[] {
     options: draftQ.options,
   };
 
-  const nPlayers = players.length;
+  const collegePool = isCollegeRecentDate(d) ? collegePlayersRecent : players;
+  const nPlayers = collegePool.length;
   const iCollege = seededIndex(hashString(date + 'college'), nPlayers);
-  const pCollege = players[iCollege] as PlayerQuestion;
+  const pCollege = collegePool[iCollege] as PlayerQuestion;
 
   const nCareer = careerPathPlayers.length;
   const iCareer = seededIndex(hashString(date + 'career'), nCareer);
