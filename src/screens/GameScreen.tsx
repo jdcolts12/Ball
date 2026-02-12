@@ -6,6 +6,7 @@ import { getNflLogoUrl } from '../lib/teamLogos';
 import { isCloseEnough } from '../lib/stringSimilarity';
 import { getPstDateString } from '../lib/dailyPlayLimit';
 import { getDraftCorrectPctToday, getCollegeCorrectPctToday, getCareerPathCorrectPctToday, includeCurrentPlayer } from '../services/games';
+import { QuizFinishedPopup } from './QuizFinishedPopup';
 
 export interface GameResultBreakdown {
   draftCorrect: boolean;
@@ -21,10 +22,12 @@ export interface GameResultBreakdown {
 }
 
 interface GameScreenProps {
+  userId: string;
+  careerRankBefore: number | null;
   onEnd: (score: number, correct: number, total: number, breakdown: GameResultBreakdown) => void;
 }
 
-export function GameScreen({ onEnd }: GameScreenProps) {
+export function GameScreen({ userId, careerRankBefore, onEnd }: GameScreenProps) {
   const date = useMemo(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const override = params.get('date');
@@ -53,6 +56,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   /** Timer countdown in seconds (30 seconds per question) */
   const [timeRemaining, setTimeRemaining] = useState(30);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  /** When game ends: show popup first, then call onEnd when user closes */
+  const [gameEnded, setGameEnded] = useState<{ score: number; correct: number; total: number; breakdown: GameResultBreakdown } | null>(null);
 
   const current: GameQuestion | undefined = questions[index];
   const correctAnswer =
@@ -123,7 +128,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
           else if (isCollege) finalAnswers[1] = userAnswer;
           else if (isCareerPath) finalAnswers[2] = userAnswer;
           else if (isSeasonLeader) finalAnswers[3] = userAnswer;
-          onEnd(newScore, newCorrect, questions.length, {
+          const breakdown: GameResultBreakdown = {
             draftCorrect: finalDraft,
             collegeCorrect: finalCollege,
             careerPathCorrect: finalCareerPath,
@@ -133,7 +138,8 @@ export function GameScreen({ onEnd }: GameScreenProps) {
             userAnswerCareerPath: finalAnswers[2],
             userAnswerSeasonLeader: finalAnswers[3],
             isSuperBowlWeekend: isSuperBowlWeekend || undefined,
-          });
+          };
+          setGameEnded({ score: newScore, correct: newCorrect, total: questions.length, breakdown });
         } else {
           setCorrectByType((prev) => {
             const next: [boolean, boolean, boolean, boolean] = [...prev];
@@ -154,7 +160,7 @@ export function GameScreen({ onEnd }: GameScreenProps) {
         }
       }, 3000);
     },
-    [correctAnswer, answered, index, questions.length, score, correctCount, correctByType, current.type, onEnd],
+    [correctAnswer, answered, index, questions.length, score, correctCount, correctByType, current.type, isSuperBowlWeekend],
   );
 
   const handleCareerPathSubmit = useCallback(() => {
@@ -231,6 +237,21 @@ export function GameScreen({ onEnd }: GameScreenProps) {
   }, [answered]);
 
   const careerPathCorrect = current?.type === 'careerPath' && answered && current && isCloseEnough(careerPathGuess, current.correctAnswer);
+
+  if (gameEnded) {
+    return (
+      <QuizFinishedPopup
+        correct={gameEnded.correct}
+        total={gameEnded.total}
+        userId={userId}
+        careerRankBefore={careerRankBefore}
+        onClose={() => {
+          onEnd(gameEnded.score, gameEnded.correct, gameEnded.total, gameEnded.breakdown);
+          setGameEnded(null);
+        }}
+      />
+    );
+  }
 
   if (!current || questions.length === 0) {
     return (

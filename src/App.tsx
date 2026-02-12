@@ -7,12 +7,9 @@ import { AuthScreen } from './screens/AuthScreen';
 import { DailyLimitScreen } from './screens/DailyLimitScreen';
 import { HomeScreen } from './screens/HomeScreen';
 import { GameScreen } from './screens/GameScreen';
-import { QuizFinishedPopup } from './screens/QuizFinishedPopup';
 import { LeaderboardScreen } from './screens/LeaderboardScreen';
 import { ProfileScreen } from './screens/ProfileScreen';
-import type { GameResultBreakdown } from './screens/GameScreen';
-
-type Screen = 'home' | 'game' | 'results' | 'leaderboard' | 'profile';
+type Screen = 'home' | 'game' | 'leaderboard' | 'profile';
 
 const loadingStyle = { minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)', color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'system-ui, sans-serif', fontWeight: 'bold' };
 
@@ -21,7 +18,6 @@ function App() {
   const { canPlay, recordPlay, refreshCanPlay, checking } = useDailyPlayLimit();
   const [screen, setScreen] = useState<Screen>('home');
   const [profileUserId, setProfileUserId] = useState<string | null>(null);
-  const [results, setResults] = useState<{ score: number; correct: number; total: number; breakdown: GameResultBreakdown } | null>(null);
   const [startingGame, setStartingGame] = useState(false);
   const [careerRankBefore, setCareerRankBefore] = useState<number | null>(null);
 
@@ -79,24 +75,6 @@ function App() {
     );
   }
 
-  if (screen === 'results' && results) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
-        <QuizFinishedPopup
-          correct={results.correct}
-          total={results.total}
-          userId={user.id}
-          careerRankBefore={careerRankBefore}
-          onClose={() => {
-            setResults(null);
-            setScreen('home');
-            refreshCanPlay();
-          }}
-        />
-      </div>
-    );
-  }
-
   if (screen === 'home') {
     const handleStart = async () => {
       setStartingGame(true);
@@ -129,9 +107,9 @@ function App() {
   return (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
       <GameScreen
+        userId={user.id}
+        careerRankBefore={careerRankBefore}
         onEnd={(score, correct, total, breakdown) => {
-          setResults({ score, correct, total, breakdown });
-          setScreen('results');
           if (user) {
             recordCompletedGame({
               score,
@@ -151,6 +129,8 @@ function App() {
                 recordPlay();
               });
           }
+          setScreen('home');
+          refreshCanPlay();
         }}
       />
     </div>
