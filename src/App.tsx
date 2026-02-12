@@ -130,6 +130,8 @@ function App() {
     <div style={{ minHeight: '100vh', background: 'linear-gradient(to bottom, #065f46, #047857, #065f46)' }}>
       <GameScreen
         onEnd={(score, correct, total, breakdown) => {
+          setResults({ score, correct, total, breakdown });
+          setScreen('results');
           if (user) {
             recordCompletedGame({
               score,
@@ -143,20 +145,11 @@ function App() {
               userAnswerCareerPath: breakdown.userAnswerCareerPath,
               userAnswerSeasonLeader: breakdown.userAnswerSeasonLeader,
             })
-              .then(() => {
-                recordPlay();
-                setResults({ score, correct, total, breakdown });
-                setScreen('results');
-              })
+              .then(() => recordPlay())
               .catch((err) => {
                 console.error('Failed to save game (daily stats may not show):', err);
                 recordPlay();
-                setResults({ score, correct, total, breakdown });
-                setScreen('results');
               });
-          } else {
-            setResults({ score, correct, total, breakdown });
-            setScreen('results');
           }
         }}
       />
