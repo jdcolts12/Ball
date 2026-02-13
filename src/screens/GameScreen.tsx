@@ -24,10 +24,13 @@ export interface GameResultBreakdown {
 interface GameScreenProps {
   userId: string;
   careerRankBefore: number | null;
-  onEnd: (score: number, correct: number, total: number, breakdown: GameResultBreakdown) => void;
+  /** Save game to DB (must complete before popup shows so streak is correct). */
+  onSaveGame: (score: number, correct: number, total: number, breakdown: GameResultBreakdown) => Promise<void>;
+  /** Called when user closes popup: recordPlay, navigate home. */
+  onClosePopup: (score: number, correct: number, total: number, breakdown: GameResultBreakdown) => void;
 }
 
-export function GameScreen({ userId, careerRankBefore, onEnd }: GameScreenProps) {
+export function GameScreen({ userId, careerRankBefore, onSaveGame, onClosePopup }: GameScreenProps) {
   const date = useMemo(() => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
     const override = params.get('date');
@@ -139,7 +142,13 @@ export function GameScreen({ userId, careerRankBefore, onEnd }: GameScreenProps)
             userAnswerSeasonLeader: finalAnswers[3],
             isSuperBowlWeekend: isSuperBowlWeekend || undefined,
           };
-          setGameEnded({ score: newScore, correct: newCorrect, total: questions.length, breakdown });
+          const data = { score: newScore, correct: newCorrect, total: questions.length, breakdown };
+          onSaveGame(data.score, data.correct, data.total, data.breakdown)
+            .then(() => setGameEnded(data))
+            .catch((err) => {
+              console.error('Failed to save game:', err);
+              setGameEnded(data);
+            });
         } else {
           setCorrectByType((prev) => {
             const next: [boolean, boolean, boolean, boolean] = [...prev];
@@ -160,7 +169,7 @@ export function GameScreen({ userId, careerRankBefore, onEnd }: GameScreenProps)
         }
       }, 3000);
     },
-    [correctAnswer, answered, index, questions.length, score, correctCount, correctByType, current.type, isSuperBowlWeekend],
+    [correctAnswer, answered, index, questions.length, score, correctCount, correctByType, current.type, isSuperBowlWeekend, onSaveGame],
   );
 
   const handleCareerPathSubmit = useCallback(() => {
@@ -246,7 +255,7 @@ export function GameScreen({ userId, careerRankBefore, onEnd }: GameScreenProps)
         userId={userId}
         careerRankBefore={careerRankBefore}
         onClose={() => {
-          onEnd(gameEnded.score, gameEnded.correct, gameEnded.total, gameEnded.breakdown);
+          onClosePopup(gameEnded.score, gameEnded.correct, gameEnded.total, gameEnded.breakdown);
           setGameEnded(null);
         }}
       />
@@ -259,7 +268,7 @@ export function GameScreen({ userId, careerRankBefore, onEnd }: GameScreenProps)
         <p className="text-slate-400 text-center">No questions for this date.</p>
         <button
           type="button"
-          onClick={() => onEnd(0, 0, 0, { draftCorrect: false, collegeCorrect: false, careerPathCorrect: false, seasonLeaderCorrect: false })}
+          onClick={() => onClosePopup(0, 0, 0, { draftCorrect: false, collegeCorrect: false, careerPathCorrect: false, seasonLeaderCorrect: false })}
           className="mt-4 px-4 py-2 rounded-lg bg-amber-500 text-slate-900 font-semibold"
         >
           Exit

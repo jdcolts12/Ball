@@ -35,13 +35,17 @@ export function QuizFinishedPopup({
   useEffect(() => {
     let cancelled = false;
 
-    getUserPublicProfile(userId).then(({ profile, error }) => {
-      if (!cancelled && !error && profile) {
-        setStreak(profile.consecutive_days_played ?? 0);
-      } else if (!cancelled) {
-        setStreak(0);
-      }
-    });
+    const fetchStreak = () => {
+      getUserPublicProfile(userId).then(({ profile, error }) => {
+        if (!cancelled && !error && profile) {
+          setStreak(profile.consecutive_days_played ?? 0);
+        } else if (!cancelled) {
+          setStreak(0);
+        }
+      });
+    };
+    fetchStreak();
+    const retry = setTimeout(fetchStreak, 800);
 
     getAllTimeLeaderboard(500).then(({ rows, error }) => {
       if (cancelled || error || !rows.length) return;
@@ -56,6 +60,7 @@ export function QuizFinishedPopup({
 
     return () => {
       cancelled = true;
+      clearTimeout(retry);
     };
   }, [userId, careerRankBefore]);
 

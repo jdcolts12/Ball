@@ -109,9 +109,9 @@ function App() {
       <GameScreen
         userId={user.id}
         careerRankBefore={careerRankBefore}
-        onEnd={(score, correct, total, breakdown) => {
+        onSaveGame={async (score, correct, total, breakdown) => {
           if (user) {
-            recordCompletedGame({
+            const { error } = await recordCompletedGame({
               score,
               questionsAnswered: total,
               correctAnswers: correct,
@@ -122,13 +122,12 @@ function App() {
               userAnswerCollege: breakdown.userAnswerCollege,
               userAnswerCareerPath: breakdown.userAnswerCareerPath,
               userAnswerSeasonLeader: breakdown.userAnswerSeasonLeader,
-            })
-              .then(() => recordPlay())
-              .catch((err) => {
-                console.error('Failed to save game (daily stats may not show):', err);
-                recordPlay();
-              });
+            });
+            if (error) throw error;
           }
+        }}
+        onClosePopup={() => {
+          if (user) recordPlay();
           setScreen('home');
           refreshCanPlay();
         }}

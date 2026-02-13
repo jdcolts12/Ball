@@ -1,7 +1,7 @@
 /**
- * Edge Function: Send daily reminder emails to all users who haven't played today
- * 
- * Sends reminders to ALL users who haven't played by 5 PM, with personalized messages:
+ * Edge Function: Send daily reminder emails to all users who haven't played today (PST)
+ *
+ * Intended to run at 7:00 PM PST. Sends reminders to ALL users who haven't played today (PST):
  * - Users with streaks ≥2: "Don't lose your X-day streak!"
  * - Other users: "Don't forget to play today!"
  */
@@ -38,10 +38,20 @@ serve(async (req) => {
       }
     )
 
-    // Get today's date (YYYY-MM-DD)
-    const today = new Date().toISOString().split('T')[0]
-    
-    // Get all users who played yesterday or earlier (haven't played today)
+    // Get today's date in PST (YYYY-MM-DD) so "today" matches the app's day boundary
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Los_Angeles',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    const parts = formatter.formatToParts(new Date())
+    const year = parts.find((p: { type: string }) => p.type === 'year')?.value ?? ''
+    const month = parts.find((p: { type: string }) => p.type === 'month')?.value ?? ''
+    const day = parts.find((p: { type: string }) => p.type === 'day')?.value ?? ''
+    const today = `${year}-${month}-${day}`
+
+    // Get all users who played yesterday or earlier (haven't played today PST)
     const { data: stats, error: statsError } = await supabaseAdmin
       .from('stats')
       .select('user_id, last_played')
@@ -116,7 +126,7 @@ serve(async (req) => {
             to: user.email,
             subject: user.streak_count >= 2 
               ? `🔥 Don't lose your ${user.streak_count}-day streak!` 
-              : `⚽ Don't forget to play YunoBall today!`,
+              : `🏈 Don't forget to play YunoBall today!`,
             html: `
               <!DOCTYPE html>
               <html>
@@ -131,10 +141,10 @@ serve(async (req) => {
                 <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
                   <h2 style="color: #065f46; margin-top: 0;">Hey ${user.username}!</h2>
                   ${user.streak_count >= 2 
-                    ? `<p style="font-size: 18px;">You're on a <strong style="color: #dc2626;">${user.streak_count}-day perfect game streak</strong> 🔥</p>
+                    ? `<p style="font-size: 18px;">You're on a <strong style="color: #dc2626;">${user.streak_count}-day consecutive game streak</strong> 🔥</p>
                        <p>Don't let it end! Play today to keep your streak alive.</p>`
                     : `<p style="font-size: 18px;">Don't forget to play today's NFL trivia!</p>
-                       <p>Test your knowledge with 3 daily questions and compete on the leaderboard.</p>`
+                       <p>Test your knowledge and compete on the leaderboard.</p>`
                   }
                   <div style="text-align: center; margin: 30px 0;">
                     <a href="${APP_URL}" style="background: #10b981; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">Play Now →</a>

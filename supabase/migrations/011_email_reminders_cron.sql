@@ -1,5 +1,5 @@
 -- Migration: Set up cron job for daily email reminders
--- This runs daily at 5 PM to send reminders to ALL users who haven't played today
+-- This runs daily at 7 PM PST (03:00 UTC) to send reminders to ALL users who haven't played today (PST)
 
 -- Enable pg_cron extension (if not already enabled)
 create extension if not exists pg_cron;
@@ -42,16 +42,15 @@ begin
 end;
 $$;
 
--- Schedule the cron job to run daily at 5 PM (17:00 UTC)
--- Adjust the time as needed (use cron syntax: minute hour day month weekday)
--- Note: 17:00 UTC = 5 PM UTC. Adjust for your timezone (e.g., 17:00 UTC = 12 PM EST, 9 AM PST)
+-- Schedule the cron job to run daily at 7 PM PST (03:00 UTC next day)
+-- Cron syntax: minute hour day month weekday. 0 3 * * * = 3:00 AM UTC = 7:00 PM PST (same calendar day in Pacific)
 select cron.schedule(
   'send-daily-reminders',
-  '0 17 * * *', -- 5 PM UTC daily
+  '0 3 * * *', -- 3 AM UTC = 7 PM PST daily
   $$SELECT public.send_streak_reminders();$$
 );
 
-comment on function public.send_streak_reminders is 'Calls the Edge Function to send reminder emails to all users who haven''t played today by 5 PM.';
+comment on function public.send_streak_reminders is 'Calls the Edge Function to send reminder emails to all users who haven''t played today (PST) by 7 PM Pacific.';
 
 -- To manually test, run:
 -- SELECT public.send_streak_reminders();
